@@ -1,4 +1,4 @@
-# PHP Console Writer
+# PHP Console
 
 **Un package d'écriture console élégant et fluide pour PHP avec des composants stylisés.**
 
