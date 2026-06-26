@@ -4,12 +4,19 @@ declare(strict_types=1);
 
 namespace AndyDefer\ConsoleWriter\Console\Components;
 
+use AndyDefer\ConsoleWriter\Console\Services\AnsiConverterService;
+use AndyDefer\ConsoleWriter\Console\Services\VirtualTerminalService;
 use AndyDefer\ConsoleWriter\Console\ValueObjects\CleanedTextVO;
+use AndyDefer\ConsoleWriter\Contracts\Services\AnsiConverterInterface;
 use AndyDefer\DomainStructures\Utils\ListCollection;
 use AndyDefer\PhpVo\ValueObjects\Types\BoolVO;
 use AndyDefer\PhpVo\ValueObjects\Types\FloatVO;
 use AndyDefer\PhpVo\ValueObjects\Types\StringVO;
 
+/**
+ * Tableau avec rendu cellule par cellule
+ * Toutes les cellules ont la MÊME largeur (la plus grande cellule + padding)
+ */
 final class Table
 {
     private const PADDING = 2;
@@ -20,87 +27,119 @@ final class Table
 
     private const SEPARATOR = ' │ ';
 
-    /**
-     * Coefficient pour compenser la largeur du caractère '─'
-     */
-    private static function getDashFactor(int $columnCount): float
+    private static ?AnsiConverterInterface $ansi = null;
+
+    private static function getAnsi(): AnsiConverterInterface
     {
-        return match ($columnCount) {
-            1 => 1.05,
-            2 => 1.06,
-            3 => 1.06,
-            4 => 1.066,
-            default => 1.10,
-        };
+        if (self::$ansi === null) {
+            self::$ansi = new AnsiConverterService;
+        }
+
+        return self::$ansi;
     }
 
     public static function render(ListCollection $headers, ListCollection $rows): string
     {
+
         if ($rows->isEmpty()) {
             return '<fg=yellow>⚠️  No data to display</fg=yellow>';
         }
 
-        // ✅ Si plus de 5 colonnes → TableList
-        if ($headers->count() > 5) {
-            return TableList::render($headers, $rows);
-        }
+        // ✅ 1. NETTOYER LES ÉMOJIS AVANT TOUTE OPÉRATION
+        $cleanHeaders = self::cleanEmojisFromHeaders($headers);
+        $cleanRows = self::cleanEmojisFromRows($rows);
 
-        // ✅ Nettoyer les émojis AVANT le calcul de la taille
-        $cleanHeaders = self::cleanHeaders($headers);
-        $cleanRows = self::cleanRows($rows);
+        $vt = new VirtualTerminalService(self::getAnsi());
 
-        $maxCellWidth = self::findMaxCellWidth($cleanHeaders, $cleanRows);
+        $columnCount = $headers->count();
+
+        // 1. Trouver la cellule la plus large
+        $maxCellWidth = self::findMaxCellWidth($headers, $rows);
+
+        // 2. Largeur de cellule = max + padding
         $cellWidthInt = self::getCellWidth($maxCellWidth);
 
-        $columnCount = $cleanHeaders->count();
+        // 3. Toutes les cellules ont la MÊME largeur
+        $columnCount = $headers->count();
         $totalWidth = FloatVO::from($cellWidthInt)
             ->multiply(FloatVO::from($columnCount))
             ->add(FloatVO::from($columnCount + 1));
-        $totalWidthInt = $totalWidth->toInt();
+        $paddingAdjustment = ($columnCount - 2) * 2;
 
-        $lines = ListCollection::from([]);
+        $totalWidthInt = $totalWidth->toInt() + $paddingAdjustment;
 
-        $lines = $lines->add(self::topBorder($totalWidthInt, $columnCount));
-        $lines = $lines->add(self::headerLine($cleanHeaders, $cellWidthInt));
-        $lines = $lines->add(self::separator($totalWidthInt, $columnCount));
+        $lineIndex = 0;
 
-        foreach ($cleanRows as $row) {
+        // ✅ Ligne 0: Bordure supérieure (sans coefficient)
+        $vt->add('line_'.$lineIndex++, self::topBorder($totalWidthInt));
+
+        // Ligne 1: En-têtes
+        $headerLine = self::BORDER_LEFT;
+        foreach ($headers as $index => $header) {
+            $padded = self::padCenter(StringVO::from($header), $cellWidthInt);
+            $headerLine .= $padded;
+            if ($index < $headers->count() - 1) {
+                $headerLine .= self::SEPARATOR;
+            }
+        }
+        $headerLine .= self::BORDER_RIGHT;
+        $vt->add('line_'.$lineIndex++, '<fg=cyan><options=bold>'.$headerLine.'</options=bold></fg=cyan>');
+
+        // ✅ Ligne 2: Séparateur (sans coefficient)
+        $vt->add('line_'.$lineIndex++, self::separator($totalWidthInt));
+
+        // Lignes de données
+        foreach ($rows as $rowIndex => $row) {
             $rowCollection = $row instanceof ListCollection ? $row : ListCollection::from((array) $row);
-            $lines = $lines->add(self::dataLine($rowCollection, $cellWidthInt));
+            $dataLine = self::BORDER_LEFT;
+
+            foreach ($rowCollection as $colIndex => $cell) {
+                $padded = self::padCenter(StringVO::from($cell), $cellWidthInt);
+                $dataLine .= $padded;
+                if ($colIndex < $rowCollection->count() - 1) {
+                    $dataLine .= self::SEPARATOR;
+                }
+            }
+            $dataLine .= self::BORDER_RIGHT;
+            $vt->add('line_'.$lineIndex++, $dataLine);
         }
 
-        $lines = $lines->add(self::bottomBorder($totalWidthInt, $columnCount));
+        // ✅ Dernière ligne: Bordure inférieure (sans coefficient)
+        $vt->add('line_'.$lineIndex++, self::bottomBorder($totalWidthInt));
 
-        return $lines->reduce(
+        // Rendu
+        $vt->render();
+
+        return $vt->getLines()->reduce(
             fn ($carry, $line) => $carry === '' ? $line : $carry.PHP_EOL.$line,
             ''
         );
     }
 
     /**
-     * ✅ Nettoie les en-têtes des émojis
+     * ✅ Nettoie les émojis des en-têtes
      */
-    private static function cleanHeaders(ListCollection $headers): ListCollection
+    private static function cleanEmojisFromHeaders(ListCollection $headers): ListCollection
     {
         $clean = [];
         foreach ($headers as $header) {
-            $clean[] = (new CleanedTextVO(StringVO::from($header)->getValue()))->getCleanValue();
+            $clean[] = (new CleanedTextVO(StringVO::from($header)->getValue()))->withoutEmojis()->getValue();
         }
 
         return ListCollection::from($clean);
     }
 
     /**
-     * ✅ Nettoie les lignes des émojis
+     * ✅ Nettoie les émojis des lignes
      */
-    private static function cleanRows(ListCollection $rows): ListCollection
+    private static function cleanEmojisFromRows(ListCollection $rows): ListCollection
     {
         $cleanRows = [];
         foreach ($rows as $row) {
             $rowArray = $row instanceof ListCollection ? $row->toArray() : (array) $row;
             $cleanRow = [];
             foreach ($rowArray as $cell) {
-                $cleanRow[] = (new CleanedTextVO(StringVO::from($cell)->getValue()))->getCleanValue();
+                $cleanRow[] = (new CleanedTextVO(StringVO::from($cell)->getValue()))->withoutEmojis()->getValue();
             }
             $cleanRows[] = ListCollection::from($cleanRow);
         }
@@ -109,22 +148,8 @@ final class Table
     }
 
     /**
-     * Calcule la largeur de cellule en s'assurant qu'elle est paire
+     * ✅ Trouve la cellule la plus large parmi toutes (headers + rows)
      */
-    private static function getCellWidth(FloatVO $maxCellWidth): int
-    {
-        $cellWidth = $maxCellWidth->add(FloatVO::from(self::PADDING * 2));
-        $cellWidthInt = $cellWidth->toInt();
-
-        $isEven = BoolVO::from($cellWidthInt % 2 === 0);
-
-        if ($isEven->isFalse()->getValue()) {
-            $cellWidthInt += 1;
-        }
-
-        return $cellWidthInt;
-    }
-
     private static function findMaxCellWidth(ListCollection $headers, ListCollection $rows): FloatVO
     {
         $max = FloatVO::from(0);
@@ -132,7 +157,6 @@ final class Table
         foreach ($headers as $header) {
             $length = FloatVO::from(mb_strlen(StringVO::from($header)->getValue()));
             $isGreater = BoolVO::from($length->greaterThan($max)->getValue());
-
             if ($isGreater->isTrue()->getValue()) {
                 $max = $length;
             }
@@ -143,7 +167,6 @@ final class Table
             foreach ($rowArray as $cell) {
                 $length = FloatVO::from(mb_strlen(StringVO::from($cell)->getValue()));
                 $isGreater = BoolVO::from($length->greaterThan($max)->getValue());
-
                 if ($isGreater->isTrue()->getValue()) {
                     $max = $length;
                 }
@@ -153,79 +176,55 @@ final class Table
         return $max;
     }
 
-    private static function topBorder(int $totalWidth, int $columnCount): string
+    /**
+     * ✅ Calcule la largeur de cellule avec padding, en s'assurant qu'elle est paire
+     */
+    private static function getCellWidth(FloatVO $maxCellWidth): int
     {
-        return '<fg=cyan>┌'.self::borderLine($totalWidth, $columnCount).'┐</fg=cyan>';
-    }
+        $cellWidth = $maxCellWidth->add(FloatVO::from(self::PADDING * 2));
+        $cellWidthInt = $cellWidth->toInt();
 
-    private static function bottomBorder(int $totalWidth, int $columnCount): string
-    {
-        return '<fg=cyan>└'.self::borderLine($totalWidth, $columnCount).'┘</fg=cyan>';
-    }
-
-    private static function separator(int $totalWidth, int $columnCount): string
-    {
-        return '<fg=cyan>├'.self::borderLine($totalWidth, $columnCount).'┤</fg=cyan>';
-    }
-
-    private static function borderLine(int $totalWidth, int $columnCount): string
-    {
-        $factor = self::getDashFactor($columnCount);
-        $adjustedWidth = (int) ceil($totalWidth * $factor);
-
-        return str_repeat('─', $adjustedWidth);
-    }
-
-    private static function headerLine(ListCollection $headers, int $cellWidth): string
-    {
-        $line = StringVO::from(self::BORDER_LEFT);
-
-        foreach ($headers as $index => $header) {
-            $padded = self::padCenter(StringVO::from($header), $cellWidth);
-            $line = $line->concat($padded);
-
-            $isNotLast = BoolVO::from($index < $headers->count() - 1);
-            if ($isNotLast->isTrue()->getValue()) {
-                $line = $line->concat(self::SEPARATOR);
-            }
+        $isEven = BoolVO::from($cellWidthInt % 2 === 0);
+        if ($isEven->isFalse()->getValue()) {
+            $cellWidthInt += 1;
         }
 
-        $hasThreeColumns = BoolVO::from($headers->count() === 3);
-
-        if ($hasThreeColumns->isTrue()->getValue()) {
-            $line = $line->concat(' '.self::BORDER_RIGHT);
-        } else {
-            $line = $line->concat('  '.self::BORDER_RIGHT);
-        }
-
-        return '<fg=cyan><options=bold>'.$line->getValue().'</options=bold></fg=cyan>';
+        return $cellWidthInt;
     }
 
-    private static function dataLine(ListCollection $row, int $cellWidth): string
+    // ========== BORDURES ==========
+
+    /**
+     * ✅ Bordure supérieure - largeur exacte sans coefficient
+     */
+    private static function topBorder(int $totalWidth): string
     {
-        $line = StringVO::from(self::BORDER_LEFT);
+        $line = str_repeat('─', $totalWidth);
 
-        $rowCount = $row->count();
-
-        foreach ($row as $index => $cell) {
-            $padded = self::padCenter(StringVO::from($cell), $cellWidth);
-            $line = $line->concat($padded);
-
-            if ($index < $rowCount - 1) {
-                $line = $line->concat(self::SEPARATOR);
-            }
-        }
-
-        // ✅ Pour 5 colonnes : ajouter un espace avant BORDER_RIGHT
-        $hasFiveColumns = BoolVO::from($rowCount <= 3);
-        if ($hasFiveColumns->isTrue()->getValue()) {
-            $line = $line->concat(' '.self::BORDER_RIGHT);
-        } else {
-            $line = $line->concat(' '.self::BORDER_RIGHT);
-        }
-
-        return $line->getValue();
+        return '<fg=cyan>┌'.$line.'┐</fg=cyan>';
     }
+
+    /**
+     * ✅ Bordure inférieure - largeur exacte sans coefficient
+     */
+    private static function bottomBorder(int $totalWidth): string
+    {
+        $line = str_repeat('─', $totalWidth);
+
+        return '<fg=cyan>└'.$line.'┘</fg=cyan>';
+    }
+
+    /**
+     * ✅ Séparateur - largeur exacte sans coefficient
+     */
+    private static function separator(int $totalWidth): string
+    {
+        $line = str_repeat('─', $totalWidth);
+
+        return '<fg=cyan>├'.$line.'┤</fg=cyan>';
+    }
+
+    // ========== PADDING ==========
 
     private static function padCenter(StringVO $text, int $width): StringVO
     {
@@ -241,107 +240,113 @@ final class Table
             ->concat(str_repeat(' ', $right));
     }
 
-    private static function padLeft(StringVO $text, int $width): StringVO
-    {
-        $textLength = mb_strlen($text->getValue());
-        $padding = $width - $textLength;
+    // ========== MÉTHODES DE MISE À JOUR ==========
 
-        return StringVO::from('')
-            ->concat($text)
-            ->concat(str_repeat(' ', $padding));
-    }
+    /**
+     * ✅ Met à jour une cellule spécifique
+     */
+    public static function updateCell(
+        VirtualTerminalService $vt,
+        int $rowIndex,
+        int $colIndex,
+        string $value,
+        int $cellWidthInt
+    ): void {
+        $lineKey = 'line_'.($rowIndex + 3);
+        $line = $vt->get($lineKey);
 
-    private static function padRight(StringVO $text, int $width): StringVO
-    {
-        $textLength = mb_strlen($text->getValue());
-        $padding = $width - $textLength;
-
-        return StringVO::from('')
-            ->concat(str_repeat(' ', $padding))
-            ->concat($text);
-    }
-
-    public static function renderWithAlignment(
-        ListCollection $headers,
-        ListCollection $rows,
-        string $defaultAlignment = 'center',
-        ?array $columnAlignments = null
-    ): string {
-        if ($rows->isEmpty()) {
-            return '<fg=yellow>⚠️  No data to display</fg=yellow>';
+        if ($line === null) {
+            return;
         }
 
-        // ✅ Si plus de 5 colonnes → TableList
-        if ($headers->count() > 5) {
-            return TableList::renderWithColor($headers, $rows);
-        }
+        $paddedValue = self::padCenter(StringVO::from($value), $cellWidthInt)->getValue();
 
-        // ✅ Nettoyer les émojis AVANT le calcul de la taille
-        $cleanHeaders = self::cleanHeaders($headers);
-        $cleanRows = self::cleanRows($rows);
+        $parts = explode(self::SEPARATOR, $line);
+        $newLine = self::BORDER_LEFT;
 
-        $maxCellWidth = self::findMaxCellWidth($cleanHeaders, $cleanRows);
-        $cellWidthInt = self::getCellWidth($maxCellWidth);
-
-        $columnCount = $cleanHeaders->count();
-        $totalWidth = FloatVO::from($cellWidthInt)
-            ->multiply(FloatVO::from($columnCount))
-            ->add(FloatVO::from($columnCount + 1));
-        $totalWidthInt = $totalWidth->toInt();
-
-        $lines = ListCollection::from([]);
-
-        $lines = $lines->add(self::topBorder($totalWidthInt, $columnCount));
-        $lines = $lines->add(self::headerLine($cleanHeaders, $cellWidthInt));
-        $lines = $lines->add(self::separator($totalWidthInt, $columnCount));
-
-        foreach ($cleanRows as $row) {
-            $rowCollection = $row instanceof ListCollection ? $row : ListCollection::from((array) $row);
-            $lines = $lines->add(self::dataLineWithAlignment($rowCollection, $cellWidthInt, $defaultAlignment, $columnAlignments));
-        }
-
-        $lines = $lines->add(self::bottomBorder($totalWidthInt, $columnCount));
-
-        return $lines->reduce(
-            fn ($carry, $line) => $carry === '' ? $line : $carry.PHP_EOL.$line,
-            ''
-        );
-    }
-
-    private static function dataLineWithAlignment(
-        ListCollection $row,
-        int $cellWidth,
-        string $defaultAlignment = 'center',
-        ?array $columnAlignments = null
-    ): string {
-        $line = StringVO::from(self::BORDER_LEFT);
-
-        $rowCount = $row->count();
-
-        foreach ($row as $index => $cell) {
-            $alignment = $columnAlignments[$index] ?? $defaultAlignment;
-
-            $padded = match ($alignment) {
-                'left' => self::padLeft(StringVO::from($cell), $cellWidth),
-                'right' => self::padRight(StringVO::from($cell), $cellWidth),
-                default => self::padCenter(StringVO::from($cell), $cellWidth),
-            };
-
-            $line = $line->concat($padded);
-
-            if ($index < $rowCount - 1) {
-                $line = $line->concat(self::SEPARATOR);
+        foreach ($parts as $index => $part) {
+            if ($index === $colIndex) {
+                $newLine .= $paddedValue;
+            } else {
+                $newLine .= $part;
+            }
+            if ($index < count($parts) - 1) {
+                $newLine .= self::SEPARATOR;
             }
         }
+        $newLine .= self::BORDER_RIGHT;
 
-        // ✅ Pour 5 colonnes : ajouter un espace avant BORDER_RIGHT
-        $hasFiveColumns = BoolVO::from($rowCount === 5);
-        if ($hasFiveColumns->isTrue()->getValue()) {
-            $line = $line->concat(' '.self::BORDER_RIGHT);
-        } else {
-            $line = $line->concat(self::BORDER_RIGHT);
+        $vt->update($lineKey, $newLine);
+        $vt->render();
+    }
+
+    /**
+     * ✅ Met à jour une ligne entière
+     */
+    public static function updateRow(
+        VirtualTerminalService $vt,
+        int $rowIndex,
+        ListCollection $row,
+        int $cellWidthInt
+    ): void {
+        $lineKey = 'line_'.($rowIndex + 3);
+        $dataLine = self::BORDER_LEFT;
+
+        foreach ($row as $colIndex => $cell) {
+            $padded = self::padCenter(StringVO::from($cell), $cellWidthInt);
+            $dataLine .= $padded;
+            if ($colIndex < $row->count() - 1) {
+                $dataLine .= self::SEPARATOR;
+            }
+        }
+        $dataLine .= self::BORDER_RIGHT;
+
+        $vt->update($lineKey, $dataLine);
+        $vt->render();
+    }
+
+    /**
+     * ✅ Ajoute une ligne
+     */
+    public static function addRow(
+        VirtualTerminalService $vt,
+        ListCollection $row,
+        int $cellWidthInt
+    ): void {
+        $lineIndex = 3;
+        while ($vt->has('line_'.($lineIndex + 1))) {
+            $lineIndex++;
         }
 
-        return $line->getValue();
+        $dataLine = self::BORDER_LEFT;
+        foreach ($row as $colIndex => $cell) {
+            $padded = self::padCenter(StringVO::from($cell), $cellWidthInt);
+            $dataLine .= $padded;
+            if ($colIndex < $row->count() - 1) {
+                $dataLine .= self::SEPARATOR;
+            }
+        }
+        $dataLine .= self::BORDER_RIGHT;
+
+        $vt->add('line_'.$lineIndex, $dataLine);
+        $vt->render();
+    }
+
+    /**
+     * ✅ Supprime une ligne
+     */
+    public static function removeRow(VirtualTerminalService $vt, int $rowIndex): void
+    {
+        $lineKey = 'line_'.($rowIndex + 3);
+        $vt->remove($lineKey);
+
+        $i = $rowIndex + 4;
+        while ($vt->has('line_'.$i)) {
+            $content = $vt->get('line_'.$i);
+            $vt->remove('line_'.$i);
+            $vt->add('line_'.($i - 1), $content);
+            $i++;
+        }
+        $vt->render();
     }
 }

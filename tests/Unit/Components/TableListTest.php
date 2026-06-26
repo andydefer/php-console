@@ -60,45 +60,6 @@ final class TableListTest extends TestCase
         $this->assertMatchesRegularExpression('/Role\s+:\s+Admin/', $plainResult);
     }
 
-    public function test_render_with_color(): void
-    {
-        $headers = ListCollection::from(['Service', 'Status', 'Port']);
-        $rows = ListCollection::from([
-            ListCollection::from(['PHP-FPM', 'Running', '9000']),
-        ]);
-
-        $result = TableList::renderWithColor($headers, $rows, 'green');
-
-        $this->assertStringContainsString('<fg=green>', $result);
-        $this->assertStringContainsString('Service', $result);
-        $this->assertStringContainsString('Status', $result);
-        $this->assertStringContainsString('Port', $result);
-        $this->assertStringContainsString('PHP-FPM', $result);
-        $this->assertStringContainsString('Running', $result);
-        $this->assertStringContainsString('9000', $result);
-    }
-
-    public function test_render_compact(): void
-    {
-        $headers = ListCollection::from(['Name', 'Value']);
-        $rows = ListCollection::from([
-            ListCollection::from(['CPU', '45%']),
-            ListCollection::from(['RAM', '8.2 Go']),
-            ListCollection::from(['Disk', '256 Go']),
-        ]);
-
-        $result = TableList::renderCompact($headers, $rows);
-        $plainResult = strip_tags($result);
-
-        $this->assertMatchesRegularExpression('/Name\s+:\s+CPU/', $plainResult);
-        $this->assertMatchesRegularExpression('/Value\s+:\s+45%/', $plainResult);
-        $this->assertMatchesRegularExpression('/Name\s+:\s+RAM/', $plainResult);
-        $this->assertMatchesRegularExpression('/Value\s+:\s+8.2 Go/', $plainResult);
-        $this->assertMatchesRegularExpression('/Name\s+:\s+Disk/', $plainResult);
-        $this->assertMatchesRegularExpression('/Value\s+:\s+256 Go/', $plainResult);
-        $this->assertStringContainsString('─────────────────────────────────────────────────', $result);
-    }
-
     public function test_render_with_long_text_wrapping(): void
     {
         $headers = ListCollection::from(['ID', 'Description']);
@@ -217,7 +178,6 @@ final class TableListTest extends TestCase
 
         $this->assertMatchesRegularExpression('/Name\s+:\s+John Doe/', $plainResult);
         $this->assertMatchesRegularExpression('/Email\s+:\s+john@example.com/', $plainResult);
-        $this->assertStringContainsString('Item #1', $result);
     }
 
     public function test_render_with_empty_values(): void

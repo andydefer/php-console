@@ -17,11 +17,22 @@
 6. [Listes](#listes)
 7. [Clés → Valeurs](#clés--valeurs)
 8. [Liens](#liens)
-9. [Buffer et affichage différé](#buffer-et-affichage-différé)
-10. [Service ANSI avancé](#service-ansi-avancé)
-11. [Référence complète des méthodes](#référence-complète-des-méthodes)
-12. [Exemples complets](#exemples-complets)
-13. [Licence](#licence)
+9. [Badges](#badges)
+10. [Métriques](#métriques)
+11. [Colonnes](#colonnes)
+12. [Timeline](#timeline)
+13. [Arborescence (Tree)](#arborescence-tree)
+14. [JSON Viewer](#json-viewer)
+15. [Barre de progression](#barre-de-progression)
+16. [Spinner](#spinner)
+17. [Logger](#logger)
+18. [Notifications](#notifications)
+19. [Sons](#sons)
+20. [Saisies utilisateur](#saisies-utilisateur)
+21. [Buffer et affichage différé](#buffer-et-affichage-différé)
+22. [VirtualTerminalService](#virtualterminalservice)
+23. [Exemples complets](#exemples-complets)
+24. [Licence](#licence)
 
 ---
 
@@ -37,6 +48,21 @@ composer require andy-defer/php-console-writer
 - Dépendance : `andydefer/php-vo: ^0.10.0`
 
 ---
+
+## Concepts fondamentaux
+
+### Architecture
+
+Le package repose sur une architecture fluide en couches :
+
+```
+Console (API principale)
+    ├── Renderable (Messages, Titres, Alertes)
+    ├── StyledComponents (Badge, Metric, Columns, Timeline, Tree, JSON)
+    ├── Interactive (Ask, Confirm, Choice, Suggest, Number, MultiChoice)
+    ├── Progress (ProgressBar, Spinner)
+    └── System (Logger, Notification, Sound)
+```
 
 ### Principe clé
 
@@ -72,6 +98,7 @@ $console
     ->error('❌ Erreur de connexion')
     ->alert('⚠️  Attention, une action est requise')
     ->line()
+    ->badgeSuccess('OK')
     ->link('https://github.com', 'Voir le projet')
     ->render();
 ```
@@ -99,47 +126,25 @@ $console->alert('⚠️  Redis est hors ligne !');
 $console->title('📊 Dashboard Système');
 ```
 
-### Méthodes avancées d'Alert
+### Rendu
 
-```php
-use AndyDefer\ConsoleWriter\Console\Components\Alert;
-
-// Padding personnalisé
-Alert::renderWithPadding('Important message', 8);
-
-// Icône personnalisée
-Alert::renderWithIcon('Success!', '✅', 4);
-
-// Couleur personnalisée
-Alert::renderWithColor('Warning!', 'red', 4);
-
-// Bordure personnalisée
-Alert::renderWithBorder('Important!', '=', 'cyan', 4);
 ```
-
-### Méthodes avancées de Title
-
-```php
-use AndyDefer\ConsoleWriter\Console\Components\Title;
-
-// Titre avec padding automatique
-Title::render('📊 Dashboard');
-
-// Padding personnalisé
-Title::renderWithPadding('Dashboard', 8);
-
-// Largeur fixe
-Title::renderWithWidth('Dashboard', 40);
-
-// Bordure personnalisée
-Title::renderWithBorder('Dashboard', '─', 4);
+ℹ️  Chargement en cours...
+✅ Opération terminée avec succès
+ ERROR  ❌ Erreur : impossible de se connecter
+┌─────────────────────────────────────┐
+│  ⚠️  Redis est hors ligne !         │
+└─────────────────────────────────────┘
+╔══════════════════════════╗
+║   📊 Dashboard Système   ║
+╚══════════════════════════╝
 ```
 
 ---
 
 ## Tableaux
 
-### Tableau basique (4 colonnes)
+### Tableau basique
 
 ```php
 $console->table(
@@ -153,7 +158,20 @@ $console->table(
 );
 ```
 
-**Résultat :**
+### Tableau adaptatif (> 5 colonnes → liste automatique)
+
+```php
+$console->adaptiveTable(
+    ['ID', 'Name', 'Description', 'Category', 'Price', 'Stock'],
+    [
+        ['1', 'Laptop Pro', 'High-performance laptop', 'Electronics', '1299.99', '25'],
+        ['2', 'Wireless Mouse', 'Ergonomic wireless mouse', 'Accessories', '29.99', '100'],
+    ]
+);
+```
+
+### Rendu
+
 ```
 ┌────────────────────────────────────────────────┐
 │  Service   │  Status      │  Port  │  Version  │
@@ -163,271 +181,99 @@ $console->table(
 │  Redis     │  ❌ Failed   │  6379  │  7.2.4    │
 │  Nginx     │  ✅ Running  │   80   │  1.24.0   │
 └────────────────────────────────────────────────┘
-```
 
-### Tableau avec ListCollection
-
-```php
-use AndyDefer\DomainStructures\Utils\ListCollection;
-
-$headers = ListCollection::from(['Product', 'Price', 'Stock']);
-$rows = ListCollection::from([
-    ListCollection::from(['Laptop', '999.99', '15']),
-    ListCollection::from(['Mouse', '29.99', '42']),
-]);
-
-$console->table($headers, $rows);
-```
-
-### Tableau adaptatif (> 5 colonnes → liste automatique)
-
-```php
-$console->adaptiveTable(
-    ['ID', 'Name', 'Description', 'Category', 'Price', 'Stock'],
-    [
-        ['1', 'Laptop Pro', 'High-performance laptop with 16GB RAM', 'Electronics', '1299.99', '25'],
-        ['2', 'Wireless Mouse', 'Ergonomic wireless mouse with Bluetooth 5.0', 'Accessories', '29.99', '100'],
-    ]
-);
-```
-
-**Résultat :**
-```
 📋 6 colonnes → affichage en liste
 
 ┌─ Item #1 ──────────────────────────────────────────────
   ID          : 1
   Name        : Laptop Pro
-  Description : High-performance laptop with 16GB RAM
+  Description : High-performance laptop
   Category    : Electronics
   Price       : 1299.99
   Stock       : 25
 └────────────────────────────────────────────────────────
-
-┌─ Item #2 ──────────────────────────────────────────────
-  ID          : 2
-  Name        : Wireless Mouse
-  Description : Ergonomic wireless mouse with Bluetooth 5.0
-  Category    : Accessories
-  Price       : 29.99
-  Stock       : 100
-└────────────────────────────────────────────────────────
-```
-
-### Forcer l'affichage en liste ou en tableau
-
-```php
-// Forcer la liste (même avec peu de colonnes)
-$console->tableAsList(
-    ['Name', 'Email', 'Role'],
-    [
-        ['John Doe', 'john@example.com', 'Admin'],
-        ['Jane Smith', 'jane@example.com', 'User'],
-    ]
-);
-
-// Forcer le tableau (même avec beaucoup de colonnes)
-$console->tableForced(
-    ['A', 'B', 'C', 'D', 'E', 'F'],
-    [
-        ['1', '2', '3', '4', '5', '6'],
-    ]
-);
-```
-
-### TableList - Options avancées
-
-```php
-use AndyDefer\ConsoleWriter\Console\Components\TableList;
-
-// Avec titre personnalisé
-TableList::renderWithTitle($headers, $rows, '📦 Produits en stock');
-
-// Avec couleur personnalisée
-TableList::renderWithColor($headers, $rows, 'yellow');
-
-// Version compacte (sans bordures)
-TableList::renderCompact($headers, $rows);
 ```
 
 ---
 
 ## Listes
 
-### Styles disponibles
+### Types de listes
 
 ```php
 use AndyDefer\ConsoleWriter\Console\Enums\ListStyle;
 
 $items = ['Item 1', 'Item 2', 'Item 3'];
 
-// Puces (•)
-$console->list($items, ListStyle::BULLET);
-// • Item 1
-// • Item 2
+$console->list($items, ListStyle::BULLET);   // Puces
+$console->list($items, ListStyle::ARROW);    // Flèches
+$console->list($items, ListStyle::NUMBER);   // Numérotée
+$console->list($items, ListStyle::CHECK);    // ✓
+$console->list($items, ListStyle::STAR);     // ★
 
-// Flèches (→)
-$console->list($items, ListStyle::ARROW);
-// → Item 1
-// → Item 2
-
-// Tiret (—)
-$console->list($items, ListStyle::DASH);
-// — Item 1
-// — Item 2
-
-// Numérotée (1.)
-$console->list($items, ListStyle::NUMBER);
-// 1. Item 1
-// 2. Item 2
-
-// Alphabétique (a.)
-$console->list($items, ListStyle::ALPHA);
-// a. Item 1
-// b. Item 2
-
-// Romain (i.)
-$console->list($items, ListStyle::ROMAN);
-// i. Item 1
-// ii. Item 2
-
-// Check (✓)
-$console->list($items, ListStyle::CHECK);
-// ✓ Item 1
-// ✓ Item 2
-
-// Croix (✗)
-$console->list($items, ListStyle::CROSS);
-// ✗ Item 1
-// ✗ Item 2
-
-// Étoile (★)
-$console->list($items, ListStyle::STAR);
-// ★ Item 1
-// ★ Item 2
-```
-
-### Liste colorée
-
-```php
+// Liste colorée
 $console->listColored(
-    ['✅ Tâche terminée', '✅ Tests passés', '✅ Déploiement réussi'],
+    ['✅ Tâche terminée', '✅ Tests passés'],
     ListStyle::CHECK,
     'green'
 );
-
-$console->listColored(
-    ['❌ Échec du build', '❌ Erreur de compilation'],
-    ListStyle::CROSS,
-    'red'
-);
 ```
 
-**Résultat :**
+### Rendu
+
 ```
+• Item 1
+• Item 2
+• Item 3
+
+→ Item 1
+→ Item 2
+→ Item 3
+
+1. Item 1
+2. Item 2
+3. Item 3
+
+✓ Item 1
+✓ Item 2
+✓ Item 3
+
+★ Item 1
+★ Item 2
+★ Item 3
+
 ✓ Tâche terminée    (en vert)
 ✓ Tests passés      (en vert)
-✓ Déploiement réussi (en vert)
-✗ Échec du build    (en rouge)
-✗ Erreur de compilation (en rouge)
-```
-
-### Liste avec indentation
-
-```php
-$console->list(
-    ['Sous-item 1', 'Sous-item 2'],
-    ListStyle::BULLET,
-    2  // Indentation de 2 niveaux
-);
 ```
 
 ---
 
 ## Clés → Valeurs
 
-### KeyValue basique
-
 ```php
 $console->keyValue([
     'Nom' => 'Jean Dupont',
     'Âge' => 42,
     'Ville' => 'Paris 🇫🇷',
-    'Email' => 'jean@example.com',
-    'Status' => '✅ Actif',
 ]);
+
+$console->keyValueWithColor(['CPU' => '45%'], 'yellow');
+$console->keyValueWithValueColor(['Status' => 'OK'], 'green');
+$console->keyValueWithSeparator(['Nom' => 'Jean'], ' → ');
 ```
 
-**Résultat :**
+### Rendu
+
 ```
 Nom    : Jean Dupont
 Âge    : 42
 Ville  : Paris 🇫🇷
-Email  : jean@example.com
-Status : ✅ Actif
-```
 
-### KeyValue avec couleurs
+CPU    : 45%    (clés en jaune)
 
-```php
-// Clés en jaune
-$console->keyValueWithColor(
-    ['CPU' => '45%', 'RAM' => '8.2 Go', 'DISQUE' => '256 Go'],
-    'yellow'
-);
+Status : OK     (valeurs en vert)
 
-// Valeurs en vert
-$console->keyValueWithValueColor(
-    ['Service' => 'PHP-FPM', 'Status' => '✅ Running', 'Port' => '9000'],
-    'green'
-);
-```
-
-### KeyValue avec séparateur personnalisé
-
-```php
-$console->keyValueWithSeparator(
-    [
-        'Utilisateur' => 'admin',
-        'Rôle' => 'Administrateur',
-        'Dernière connexion' => '2026-06-25 14:30:00',
-    ],
-    ' → '
-);
-```
-
-**Résultat :**
-```
-Utilisateur → admin
-Rôle → Administrateur
-Dernière connexion → 2026-06-25 14:30:00
-```
-
-### KeyValue avec indentation
-
-```php
-$console->keyValue(
-    ['Name' => 'John'],
-    2  // Indentation de 2 niveaux
-);
-```
-
-### Types de données supportés
-
-```php
-$console->keyValue([
-    'String' => 'Hello World',
-    'Integer' => 42,
-    'Boolean' => true,
-    'Null' => null,
-    'Float' => 3.14159,
-    'Array' => ['a', 'b', 'c'],
-    'Object' => new class {
-        public function __toString(): string {
-            return 'Custom object';
-        }
-    },
-]);
+Nom → Jean      (séparateur personnalisé)
 ```
 
 ---
@@ -435,126 +281,410 @@ $console->keyValue([
 ## Liens
 
 ```php
-// Lien avec l'URL comme texte
 $console->link('https://github.com/andydefer/php-console-writer');
-
-// Lien avec texte personnalisé
 $console->link('https://github.com', '📦 Voir le projet sur GitHub');
+```
 
-// Lien dans un chaînage
-$console
-    ->info('Visitez notre site web :')
-    ->link('https://example.com', 'Cliquez ici')
-    ->line();
+### Rendu
+
+```
+https://github.com/andydefer/php-console-writer
+
+📦 Voir le projet sur GitHub
 ```
 
 ---
 
-## Buffer et affichage différé
+## Badges
 
-### Stockage et affichage différé
+```php
+$console->badge('SUCCESS', 'success');
+$console->badge('FAILED', 'danger');
+$console->badge('PENDING', 'warning');
+$console->badgeWithIcon('SUCCESS', '🟢', 'success');
+
+$console->badgeSuccess('OK');
+$console->badgeDanger('KO');
+$console->badgeWarning('WARN');
+$console->badgeInfo('INFO');
+```
+
+### Rendu
+
+```
+[SUCCESS]   (vert)
+[FAILED]    (rouge)
+[PENDING]   (jaune)
+
+🟢 [SUCCESS]  (vert avec icône)
+🟢 [OK]       (succès)
+🔴 [KO]       (danger)
+🟡 [WARN]     (avertissement)
+🔵 [INFO]     (info)
+```
+
+---
+
+## Métriques
+
+```php
+$console->metric('CPU', '45%', 'yellow');
+$console->metricWithIcon('RAM', '8.2 GB', '💾', 'green');
+$console->metricWithTrend('CPU', '45%', '↑ 5%', 'green');
+$console->metricInline('Uptime', '72h', 'cyan');
+```
+
+### Rendu
+
+```
+CPU
+45%
+
+💾 RAM
+8.2 GB
+
+CPU
+45% ↑ 5%
+
+Uptime: 72h
+```
+
+---
+
+## Colonnes
+
+```php
+$console->columns([
+    ['Users', '123'],
+    ['Servers', '5'],
+    ['Logs', '42']
+]);
+
+$console->columnsWithColors($columns, ['cyan', 'green', 'yellow']);
+$console->columnsWithHeaders($columns);
+$console->columnsCompact($columns);
+```
+
+### Rendu
+
+```
+  Users        Servers        Logs
+   123           5             42
+
+  Users        Servers        Logs   (cyan, green, yellow)
+   123           5             42
+
+┌─────────┬──────────┬─────────┐
+│ Users   │ Servers  │ Logs    │
+├─────────┼──────────┼─────────┤
+│ 123     │ 5        │ 42      │
+└─────────┴──────────┴─────────┘
+
+Users    Servers    Logs
+123      5          42
+```
+
+---
+
+## Timeline
+
+```php
+$console->timeline([
+    ['12:00', 'Application démarrée', 'Service web initialisé'],
+    ['12:01', 'Connexion DB', 'Connexion établie en 45ms'],
+    ['12:02', 'Serveur prêt', 'En attente des requêtes'],
+]);
+
+$console->timelineWithStatus($events, ['success', 'warning', 'error']);
+```
+
+### Rendu
+
+```
+  ● 12:00      Application démarrée
+    Service web initialisé
+  │
+  ● 12:01      Connexion DB
+    Connexion établie en 45ms
+  │
+  ● 12:02      Serveur prêt
+    En attente des requêtes
+
+  ✅ 12:00      Application démarrée   (succès)
+  ⚠️ 12:01      Connexion DB           (warning)
+  ❌ 12:02      Serveur prêt           (error)
+```
+
+---
+
+## Arborescence (Tree)
+
+```php
+use AndyDefer\DomainStructures\Utils\MapCollection;
+
+$tree = MapCollection::from([
+    'src' => MapCollection::from([
+        'Console' => MapCollection::from([
+            'Components' => MapCollection::from([
+                'Table.php' => MapCollection::from([]),
+                'Tree.php' => MapCollection::from([]),
+            ]),
+        ]),
+    ]),
+]);
+
+$console->tree($tree, '📦 Project');
+$console->treeWithColors($tree, '📦 Project', 'cyan', 'white');
+$console->treeWithIcons($tree, '📦 Project', '📂', '📄');
+
+// À partir de chemins
+$paths = SetCollection::from([
+    'src/Console/Components',
+    'src/Console/Services',
+    'tests/Unit',
+]);
+
+$console->treeFromPaths($paths, '📁 Project');
+```
+
+### Rendu
+
+```
+📦 Project
+├─ src
+│  ├─ Console
+│  │  ├─ Components
+│  │  │  ├─ Table.php
+│  │  │  └─ Tree.php
+│  │  └─ Services
+│  └─ Contracts
+└─ tests
+   └─ Unit
+
+📦 Project
+├─ 📂 src
+│  ├─ 📂 Console
+│  │  ├─ 📂 Components
+│  │  │  ├─ 📄 Table.php
+│  │  │  └─ 📄 Tree.php
+│  │  └─ 📂 Services
+│  └─ 📂 Contracts
+└─ 📂 tests
+   └─ 📂 Unit
+```
+
+---
+
+## JSON Viewer
+
+```php
+$data = ['user' => ['id' => 1, 'name' => 'Andy', 'active' => true]];
+
+$console->json($data);
+$console->jsonCompact($data);
+```
+
+### Rendu
+
+```
+"user": {
+  "id": 1,       (jaune)
+  "name": "Andy", (vert)
+  "active": true  (magenta)
+}
+
+{"user":{"id":1,"name":"Andy","active":true}}
+```
+
+---
+
+## Barre de progression
+
+```php
+$console->progressBar(100, 40, '📦 Téléchargement');
+
+for ($i = 0; $i < 100; $i++) {
+    usleep(30000);
+    $console->advance();
+}
+
+$console->finish();
+
+$console->progressBarStyled(50, 'processing', 40);
+```
+
+### Rendu
+
+```
+📦 Téléchargement [████████████████████████████████████████] 100%
+⚙️  Processing    [██████████████████████████████░░░░░░░]  70%
+```
+
+---
+
+## Spinner
+
+```php
+$console->spinner('Connexion à Redis...', function($spinner) {
+    sleep(3);
+    $spinner->success('Connecté');
+});
+
+$console->spinnerWait('En attente du service...', function() {
+    return $service->isReady();
+});
+```
+
+### Rendu
+
+```
+⠋ Connexion à Redis...
+⠙ Connexion à Redis...
+⠹ Connexion à Redis...
+✅ Connecté
+
+⏳ En attente du service...
+✅ Service prêt
+```
+
+---
+
+## Logger
+
+```php
+$console->logInfo('Chargement...');
+$console->logSuccess('✅ Terminé');
+$console->logError('❌ Erreur');
+$console->logWarning('⚠️ Attention');
+$console->logDebug('Debug info');
+```
+
+### Rendu
+
+```
+[14:30:00] INFO     - Chargement...
+[14:30:01] SUCCESS  - ✅ Terminé
+[14:30:02] ERROR    - ❌ Erreur
+[14:30:03] WARNING  - ⚠️ Attention
+[14:30:04] DEBUG    - Debug info
+```
+
+---
+
+## Notifications
+
+```php
+$console->notifySuccess('Déploiement réussi');
+$console->notifyError('Erreur critique');
+$console->notifyWarning('Cache à nettoyer');
+$console->notifyInfo('Nouvelle mise à jour');
+```
+
+### Rendu
+
+```
+🔔 Déploiement réussi   (vert)
+🔔 Erreur critique      (rouge)
+🔔 Cache à nettoyer     (jaune)
+🔔 Nouvelle mise à jour (bleu)
+```
+
+---
+
+## Saisies utilisateur
+
+### Ask - Saisie simple
+
+```php
+$name = $console->ask('Quel est votre nom ?');
+$city = $console->ask('Ville ?', 'Paris'); // Valeur par défaut
+```
+
+### Secret - Mot de passe masqué
+
+```php
+$password = $console->secret('Mot de passe :');
+```
+
+### Confirm - Oui/Non
+
+```php
+if ($console->confirm('Voulez-vous continuer ?', true)) {
+    // Oui
+} else {
+    // Non
+}
+```
+
+### Choice - Choix unique
+
+```php
+$lang = $console->choice(
+    'Choisissez votre langage :',
+    ['PHP', 'JavaScript', 'Python', 'Go'],
+    0 // Index par défaut
+);
+```
+
+### Rendu
+
+```
+Quel est votre nom ? : Jean
+Ville ? [Paris] : Paris
+Mot de passe : ****
+Voulez-vous continuer ? [Y/n] : y
+Choisissez votre langage : (PHP, JavaScript, Python, Go) [PHP] : JavaScript
+```
+
+---
+
+## Buffer
 
 ```php
 $console
-    ->startBuffer()  // Démarrer le buffer
+    ->startBuffer()
     ->info('Ligne 1')
     ->info('Ligne 2')
     ->info('Ligne 3')
-    ->render();       // Affiche tout d'un coup
+    ->render(); // Affiche tout d'un coup
 ```
 
-### Méthodes de gestion du buffer
+### Rendu
 
-```php
-// Démarrer le buffer
-$console->startBuffer();
-
-// Ajouter des lignes
-$console->info('Test 1');
-$console->info('Test 2');
-
-// Récupérer les lignes sans afficher
-$lines = $console->getLines(); // ['Test 1', 'Test 2']
-
-// Vider le buffer sans afficher
-$console->clear();
-
-// Afficher et vider le buffer
-$console->render();
-
-// Vérifier si le buffer est actif
-$isBuffered = $console->isBuffered(); // bool
 ```
-
-### Exemple avec plusieurs buffers
-
-```php
-$console
-    ->startBuffer()
-    ->info('Batch 1')
-    ->render()      // Affiche "Batch 1"
-    ->startBuffer()
-    ->info('Batch 2')
-    ->render();     // Affiche "Batch 2"
+ℹ️  Ligne 1
+ℹ️  Ligne 2
+ℹ️  Ligne 3
 ```
 
 ---
 
-## Service ANSI avancé
-
-### Accès au service
+## VirtualTerminalService
 
 ```php
-$ansi = $console->getAnsiConverter();
+use AndyDefer\ConsoleWriter\Console\Services\VirtualTerminalService;
+
+$vt = new VirtualTerminalService();
+$vt->add('title', '<fg=cyan><options=bold>📊 Dashboard</options=bold></fg=cyan>');
+$vt->add('cpu', '<fg=yellow>CPU : 45%</fg=yellow>');
+$vt->add('ram', '<fg=green>RAM : 8.2 GB</fg=green>');
+
+$vt->render();
+
+$vt->update('cpu', '<fg=red>CPU : 85% ⚠️</fg=red>');
+$vt->render();
 ```
 
-### Méthodes du service
+### Rendu
 
-```php
-use AndyDefer\ConsoleWriter\Console\Enums\FgColor;
-use AndyDefer\ConsoleWriter\Console\Enums\BgColor;
-use AndyDefer\ConsoleWriter\Console\Enums\Options;
-
-// Colorer un texte (style fonction color())
-echo $ansi->color('Texte en rouge', 'red');
-echo $ansi->color('Texte en vert', 'green');
-echo $ansi->color('Texte en gras', 'bold');
-
-// Colorer un fond
-echo $ansi->bgColor('Fond rouge', 'red');
-echo $ansi->bgColor('Fond vert', 'green');
-
-// Utilisation avec enum
-echo $ansi->colorEnum('Texte en cyan', FgColor::CYAN);
-echo $ansi->bgColorEnum('Fond jaune', BgColor::YELLOW);
-
-// Options
-echo $ansi->option('Texte en gras', Options::BOLD);
-echo $ansi->option('Texte souligné', Options::UNDERLINE);
-
-// Style combiné
-echo $ansi->style(
-    'Texte vert gras souligné',
-    FgColor::GREEN,
-    null,
-    Options::BOLD,
-    Options::UNDERLINE
-);
-
-// Conversion de balises
-echo $ansi->convert('<fg=green><options=bold>Hello World</options=bold></fg=green>');
-
-// Réinitialisation
-echo $ansi->reset();
-
-// Suppression des balises
-$plain = $ansi->stripTags('<fg=green>Hello</fg=green>'); // 'Hello'
 ```
+📊 Dashboard          (cyan gras)
+CPU : 45%             (jaune)
+RAM : 8.2 GB          (vert)
 
-### Utilisation directe dans Console
-
-```php
-$console->ansi('<fg=green><options=bold>▶  Balises Symfony converties en ANSI</options=bold></fg=green>');
+📊 Dashboard          (cyan gras)
+CPU : 85% ⚠️          (rouge)
+RAM : 8.2 GB          (vert)
 ```
 
 ---
@@ -583,7 +713,6 @@ $console
             'PHP' => '8.2.15',
             'MySQL' => '8.0.35',
             'Redis' => '7.2.4',
-            'Nginx' => '1.24.0',
             'Uptime' => '72h 34m 12s',
             'Charge CPU' => '45%',
             'Mémoire' => '8.2 / 16.0 Go',
@@ -620,7 +749,7 @@ $console
     ->render();
 ```
 
-### Exemple 2 : Déploiement d'application
+### Exemple 2 : Script de déploiement
 
 ```php
 <?php
@@ -628,59 +757,24 @@ $console
 require_once 'vendor/autoload.php';
 
 use AndyDefer\ConsoleWriter\Console\Console;
-use AndyDefer\ConsoleWriter\Console\Enums\ListStyle;
-use AndyDefer\DomainStructures\Utils\ListCollection;
 
 $console = new Console();
 
 $console
-    ->title('🚀 Déploiement v2.5.0')
+    ->title('🚀 Script de déploiement')
     ->line()
-    ->info('Démarrage du déploiement...')
-    ->line()
-    ->info('Étape 1/5 : Téléchargement des sources')
-    ->success('✅ Sources téléchargées (2.4 MB)')
-    ->line()
-    ->info('Étape 2/5 : Compilation des assets')
-    ->success('✅ Assets compilés (12 fichiers)')
-    ->line()
-    ->info('Étape 3/5 : Migration de la base de données')
-    ->success('✅ Migrations exécutées (4 migrations)')
-    ->line()
-    ->list(
-        ['Nouvelle fonctionnalité : Authentication JWT'],
-        ListStyle::CHECK
-    )
-    ->list(
-        ['Correction bug #1234 : Erreur de validation'],
-        ListStyle::CHECK
-    )
-    ->list(
-        ['Optimisation : Cache Redis'],
-        ListStyle::CHECK
-    )
-    ->line()
-    ->info('Étape 4/5 : Redémarrage des services')
-    ->success('✅ Services redémarrés')
-    ->line()
-    ->info('Étape 5/5 : Vérification post-déploiement')
-    ->table(
-        ['Service', 'Status', 'Response Time'],
-        [
-            ['API Gateway', '✅ OK', '45ms'],
-            ['Auth Service', '✅ OK', '32ms'],
-            ['Database', '✅ OK', '12ms'],
-            ['Cache', '✅ OK', '3ms'],
-        ]
-    )
-    ->line()
-    ->success('🎉 Déploiement terminé avec succès !')
-    ->line()
-    ->link('https://app.example.com', '🌐 Accéder à l\'application')
+    ->logInfo('Démarrage du déploiement...')
+    ->logDebug('Vérification des prérequis...')
+    ->logSuccess('✅ Prérequis vérifiés')
+    ->logInfo('Téléchargement des sources...')
+    ->logSuccess('✅ Sources téléchargées (2.4 MB)')
+    ->logInfo('Installation des dépendances...')
+    ->logWarning('⚠️ Certaines dépendances sont obsolètes')
+    ->logSuccess('✅ Déploiement terminé !')
     ->render();
 ```
 
-### Exemple 3 : Monitoring avec buffer
+### Exemple 3 : Formulaire interactif
 
 ```php
 <?php
@@ -688,100 +782,63 @@ $console
 require_once 'vendor/autoload.php';
 
 use AndyDefer\ConsoleWriter\Console\Console;
-use AndyDefer\DomainStructures\Utils\MapCollection;
 
 $console = new Console();
 
-// Collecter toutes les données avant d'afficher
-$console
-    ->startBuffer()
-    ->title('📈 Monitoring - ' . date('Y-m-d H:i:s'))
-    ->line()
-    ->info('Collecte des données en cours...')
-    ->line()
-    ->keyValueWithValueColor(
-        MapCollection::from([
-            'CPU' => '45%',
-            'RAM' => '8.2 / 16.0 Go',
-            'DISQUE' => '256 / 512 Go',
-            'UPTIME' => '72h 34m',
-            'SERVICES' => '4/5 OK',
-            'REQUÊTES' => '1 234 /s',
-            'ERREURS' => '12 / min',
-        ]),
-        'green'
-    )
-    ->line()
-    ->table(
-        ['Service', 'Status', 'Uptime'],
-        [
-            ['PHP-FPM', '✅ OK', '72h 34m'],
-            ['MySQL', '✅ OK', '72h 34m'],
-            ['Redis', '❌ KO', '0h'],
-            ['Nginx', '✅ OK', '72h 34m'],
-            ['RabbitMQ', '✅ OK', '72h 34m'],
-        ]
-    )
-    ->line()
-    ->alert('⚠️  Redis est hors ligne depuis 2h 15m')
-    ->line()
-    ->success('✅ Monitoring terminé')
-    ->render();
+$console->title('📝 Formulaire utilisateur');
+
+$name = $console->ask('Nom complet :', null, 'yellow');
+$email = $console->ask('Email :', null, 'cyan');
+$age = $console->number('Âge :', 1, 120);
+$password = $console->secret('Mot de passe :');
+$newsletter = $console->confirm('S\'abonner à la newsletter ?', true);
+$lang = $console->choice('Langage préféré :', ['PHP', 'JavaScript', 'Python', 'Go']);
+
+$console->line();
+$console->title('📊 Récapitulatif');
+$console->line();
+
+$console->keyValueWithValueColor([
+    'Nom' => $name,
+    'Email' => $email,
+    'Âge' => $age,
+    'Mot de passe' => '••••••••',
+    'Newsletter' => $newsletter ? '✅ Oui' : '❌ Non',
+    'Langage' => $lang,
+], 'green');
+
+$console->line();
+$console->success('✅ Formulaire complété avec succès !');
+$console->render();
 ```
 
-### Exemple 4 : Rapport utilisateur
+### Exemple 4 : Dashboard dynamique avec VT
 
 ```php
 <?php
 
 require_once 'vendor/autoload.php';
 
-use AndyDefer\ConsoleWriter\Console\Console;
-use AndyDefer\ConsoleWriter\Console\Enums\ListStyle;
-use AndyDefer\DomainStructures\Utils\MapCollection;
+use AndyDefer\ConsoleWriter\Console\Services\VirtualTerminalService;
 
-$console = new Console();
+$vt = new VirtualTerminalService();
 
-$console
-    ->title('👤 Profil Utilisateur')
-    ->line()
-    ->keyValueWithColor(
-        MapCollection::from([
-            'ID' => 'USR-001',
-            'Nom' => 'Jean Dupont',
-            'Email' => 'jean@example.com',
-            'Rôle' => 'Administrateur',
-            'Inscrit depuis' => '2024-01-15',
-            'Dernière connexion' => '2026-06-25 14:30:00',
-            'Statut' => '✅ Actif',
-        ]),
-        'yellow'
-    )
-    ->line()
-    ->info('📋 Activités récentes')
-    ->list(
-        [
-            '🔹 Connexion à l\'application (14:30:00)',
-            '🔹 Modification du mot de passe (14:15:00)',
-            '🔹 Consultation du rapport (13:45:00)',
-            '🔹 Export des données (13:30:00)',
-        ],
-        ListStyle::BULLET
-    )
-    ->line()
-    ->info('📊 Statistiques')
-    ->keyValueWithValueColor(
-        MapCollection::from([
-            'Total des connexions' => '847',
-            'Moyenne de connexions/semaine' => '12',
-            'Dernière activité' => 'il y a 2 minutes',
-            'Temps de session moyen' => '2h 15m',
-        ]),
-        'green'
-    )
-    ->line()
-    ->success('✅ Rapport généré avec succès')
-    ->render();
+$vt->add('title', '<fg=cyan><options=bold>📊 Monitoring en temps réel</options=bold></fg=cyan>');
+$vt->add('separator', '<fg=gray>─────────────────────────────────</fg=gray>');
+$vt->add('cpu', '<fg=yellow>CPU    : 0%</fg=yellow>');
+$vt->add('ram', '<fg=green>RAM    : 0%</fg=green>');
+$vt->add('disk', '<fg=blue>DISQUE : 0%</fg=blue>');
+$vt->add('status', '<fg=yellow>⏳ En attente de données...</fg=yellow>');
+
+$vt->render();
+
+// Simulation de mise à jour
+sleep(1);
+$vt->update('cpu', '<fg=yellow>CPU    : 45%</fg=yellow>');
+$vt->update('ram', '<fg=green>RAM    : 65%</fg=green>');
+$vt->update('disk', '<fg=blue>DISQUE : 32%</fg=blue>');
+$vt->update('status', '<fg=green>✅ Système OK</fg=green>');
+$vt->render();
 ```
 
 ---

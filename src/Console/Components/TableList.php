@@ -4,12 +4,16 @@ declare(strict_types=1);
 
 namespace AndyDefer\ConsoleWriter\Console\Components;
 
+use AndyDefer\ConsoleWriter\Console\Services\AnsiConverterService;
+use AndyDefer\ConsoleWriter\Console\Services\VirtualTerminalService;
+use AndyDefer\ConsoleWriter\Console\ValueObjects\CleanedTextVO;
+use AndyDefer\ConsoleWriter\Contracts\Services\AnsiConverterInterface;
 use AndyDefer\DomainStructures\Utils\ListCollection;
 use AndyDefer\PhpVo\ValueObjects\Types\FloatVO;
 use AndyDefer\PhpVo\ValueObjects\Types\StringVO;
 
 /**
- * Transforme un tableau en liste KeyValue lisible
+ * Transforme un tableau en liste KeyValue lisible avec VirtualTerminalService
  * Utile pour les tableaux avec plus de 5 colonnes
  *
  * @example
@@ -26,7 +30,22 @@ final class TableList
 
     private const MAX_KEY_WIDTH = 25;
 
-    private const WRAP_WIDTH = 60;
+    private const SEPARATOR = ' : ';
+
+    private const EXTRA_SPACES = 3;
+
+    private const BORDER_CHAR = '─';
+
+    private static ?AnsiConverterInterface $ansi = null;
+
+    private static function getAnsi(): AnsiConverterInterface
+    {
+        if (self::$ansi === null) {
+            self::$ansi = new AnsiConverterService;
+        }
+
+        return self::$ansi;
+    }
 
     public static function render(ListCollection $headers, ListCollection $rows): string
     {
@@ -34,36 +53,99 @@ final class TableList
             return '<fg=yellow>⚠️  No data to display</fg=yellow>';
         }
 
-        $headersArray = $headers->toArray();
-        $maxKeyLength = self::calculateMaxKeyLength($headersArray);
-        $lines = [];
+        // ✅ 1. NETTOYER LES ÉMOJIS AVANT TOUTE OPÉRATION
+        $cleanHeaders = self::cleanEmojisFromHeaders($headers);
+        $cleanRows = self::cleanEmojisFromRows($rows);
 
-        $lines[] = self::infoHeader($headersArray);
+        $vt = new VirtualTerminalService(self::getAnsi());
+        $headersArray = $cleanHeaders->toArray();
+
+        // ✅ 2. Calculer la largeur max des clés (après nettoyage)
+        $maxKeyLength = self::calculateMaxKeyLength($headersArray);
+        $totalKeyWidth = $maxKeyLength->add(FloatVO::from(self::EXTRA_SPACES));
+        $keyWidthInt = $totalKeyWidth->toInt();
+
+        $lineIndex = 0;
+        $allLines = [];
+
+        // En-tête informatif
+        $headerLine = self::infoHeader($headersArray);
+        $allLines[] = $headerLine;
+        $vt->add('line_'.$lineIndex++, $headerLine);
 
         $rowNumber = 0;
-        foreach ($rows as $row) {
+        foreach ($cleanRows as $row) {
             $rowNumber++;
             $rowArray = $row instanceof ListCollection ? $row->toArray() : (array) $row;
 
             if ($rowNumber > 1) {
-                $lines[] = '';
+                $allLines[] = '';
+                $vt->add('line_'.$lineIndex++, '');
             }
 
-            $lines[] = self::topBorder($rowNumber);
+            // ✅ Bordure supérieure (provisoire)
+            $topBorder = self::topBorder();
+            $allLines[] = $topBorder;
+            $vt->add('line_'.$lineIndex++, $topBorder);
+
+            // Lignes de contenu
+            foreach ($headersArray as $index => $header) {
+                $value = $rowArray[$index] ?? '';
+                $line = self::formatLine(
+                    StringVO::from($header),
+                    StringVO::from($value),
+                    $keyWidthInt
+                );
+                $allLines[] = $line;
+                $vt->add('line_'.$lineIndex++, $line);
+            }
+
+            // ✅ Bordure inférieure (provisoire)
+            $bottomBorder = self::bottomBorder();
+            $allLines[] = $bottomBorder;
+            $vt->add('line_'.$lineIndex++, $bottomBorder);
+        }
+
+        // ✅ 3. Trouver la ligne la plus longue (sans les balises ANSI)
+        $maxWidth = self::findMaxLineWidth($allLines);
+
+        // ✅ 4. Reconstruire avec les bonnes largeurs
+        $vt->clear();
+        $lineIndex = 0;
+
+        $vt->add('line_'.$lineIndex++, self::infoHeader($headersArray));
+
+        $rowNumber = 0;
+        foreach ($cleanRows as $row) {
+            $rowNumber++;
+            $rowArray = $row instanceof ListCollection ? $row->toArray() : (array) $row;
+
+            if ($rowNumber > 1) {
+                $vt->add('line_'.$lineIndex++, '');
+            }
+
+            // ✅ Bordure supérieure avec la largeur max
+            $vt->add('line_'.$lineIndex++, self::topBorderWithWidth($maxWidth));
 
             foreach ($headersArray as $index => $header) {
                 $value = $rowArray[$index] ?? '';
-                $lines[] = self::formatLine(
+                $vt->add('line_'.$lineIndex++, self::formatLine(
                     StringVO::from($header),
                     StringVO::from($value),
-                    $maxKeyLength
-                );
+                    $keyWidthInt
+                ));
             }
 
-            $lines[] = self::bottomBorder();
+            // ✅ Bordure inférieure avec la largeur max
+            $vt->add('line_'.$lineIndex++, self::bottomBorderWithWidth($maxWidth));
         }
 
-        return implode(PHP_EOL, $lines);
+        $vt->render();
+
+        return $vt->getLines()->reduce(
+            fn ($carry, $line) => $carry === '' ? $line : $carry.PHP_EOL.$line,
+            ''
+        );
     }
 
     public static function renderWithTitle(
@@ -75,221 +157,202 @@ final class TableList
             return '<fg=yellow>⚠️  No data to display</fg=yellow>';
         }
 
-        $headersArray = $headers->toArray();
-        $maxKeyLength = self::calculateMaxKeyLength($headersArray);
-        $lines = [];
+        // ✅ Nettoyer les émojis
+        $cleanHeaders = self::cleanEmojisFromHeaders($headers);
+        $cleanRows = self::cleanEmojisFromRows($rows);
 
-        $lines[] = self::titleLine($title);
+        $vt = new VirtualTerminalService(self::getAnsi());
+        $headersArray = $cleanHeaders->toArray();
+
+        $maxKeyLength = self::calculateMaxKeyLength($headersArray);
+        $totalKeyWidth = $maxKeyLength->add(FloatVO::from(self::EXTRA_SPACES));
+        $keyWidthInt = $totalKeyWidth->toInt();
+
+        $lineIndex = 0;
+        $allLines = [];
+
+        $titleLine = self::titleLine($title);
+        $allLines[] = $titleLine;
+        $vt->add('line_'.$lineIndex++, $titleLine);
 
         $rowNumber = 0;
-        foreach ($rows as $row) {
+        foreach ($cleanRows as $row) {
             $rowNumber++;
             $rowArray = $row instanceof ListCollection ? $row->toArray() : (array) $row;
 
             if ($rowNumber > 1) {
-                $lines[] = '';
+                $allLines[] = '';
+                $vt->add('line_'.$lineIndex++, '');
             }
 
-            $lines[] = self::topBorder($rowNumber);
+            $topBorder = self::topBorder();
+            $allLines[] = $topBorder;
+            $vt->add('line_'.$lineIndex++, $topBorder);
 
             foreach ($headersArray as $index => $header) {
                 $value = $rowArray[$index] ?? '';
-                $lines[] = self::formatLine(
+                $line = self::formatLine(
                     StringVO::from($header),
                     StringVO::from($value),
-                    $maxKeyLength
+                    $keyWidthInt
                 );
+                $allLines[] = $line;
+                $vt->add('line_'.$lineIndex++, $line);
             }
 
-            $lines[] = self::bottomBorder();
+            $bottomBorder = self::bottomBorder();
+            $allLines[] = $bottomBorder;
+            $vt->add('line_'.$lineIndex++, $bottomBorder);
         }
 
-        return implode(PHP_EOL, $lines);
-    }
+        $maxWidth = self::findMaxLineWidth($allLines);
 
-    public static function renderWithColor(
-        ListCollection $headers,
-        ListCollection $rows,
-        string $color = 'cyan'
-    ): string {
-        if ($rows->isEmpty()) {
-            return '<fg=yellow>⚠️  No data to display</fg=yellow>';
-        }
+        $vt->clear();
+        $lineIndex = 0;
 
-        $headersArray = $headers->toArray();
-        $maxKeyLength = self::calculateMaxKeyLength($headersArray);
-        $lines = [];
-
-        $lines[] = self::infoHeader($headersArray, $color);
+        $vt->add('line_'.$lineIndex++, self::titleLine($title));
 
         $rowNumber = 0;
-        foreach ($rows as $row) {
+        foreach ($cleanRows as $row) {
             $rowNumber++;
             $rowArray = $row instanceof ListCollection ? $row->toArray() : (array) $row;
 
             if ($rowNumber > 1) {
-                $lines[] = '';
+                $vt->add('line_'.$lineIndex++, '');
             }
 
-            $lines[] = self::topBorder($rowNumber, $color);
+            $vt->add('line_'.$lineIndex++, self::topBorderWithWidth($maxWidth));
 
             foreach ($headersArray as $index => $header) {
                 $value = $rowArray[$index] ?? '';
-                $lines[] = self::formatLineWithColor(
+                $vt->add('line_'.$lineIndex++, self::formatLine(
                     StringVO::from($header),
                     StringVO::from($value),
-                    $maxKeyLength,
-                    $color
-                );
+                    $keyWidthInt
+                ));
             }
 
-            $lines[] = self::bottomBorder($color);
+            $vt->add('line_'.$lineIndex++, self::bottomBorderWithWidth($maxWidth));
         }
 
-        return implode(PHP_EOL, $lines);
+        $vt->render();
+
+        return $vt->getLines()->reduce(
+            fn ($carry, $line) => $carry === '' ? $line : $carry.PHP_EOL.$line,
+            ''
+        );
     }
 
-    public static function renderCompact(ListCollection $headers, ListCollection $rows): string
+    // ========== NETTOYAGE DES ÉMOJIS ==========
+
+    private static function cleanEmojisFromHeaders(ListCollection $headers): ListCollection
     {
-        if ($rows->isEmpty()) {
-            return '<fg=yellow>⚠️  No data to display</fg=yellow>';
+        $clean = [];
+        foreach ($headers as $header) {
+            $clean[] = (new CleanedTextVO(StringVO::from((string) $header)->getValue()))->withoutEmojis()->getValue();
         }
 
-        $headersArray = $headers->toArray();
-        $maxKeyLength = self::calculateMaxKeyLength($headersArray);
-        $lines = [];
-        $rowNumber = 0;
-
-        foreach ($rows as $row) {
-            $rowNumber++;
-            $rowArray = $row instanceof ListCollection ? $row->toArray() : (array) $row;
-
-            if ($rowNumber > 1) {
-                $lines[] = '';
-                $lines[] = '<fg=gray>─────────────────────────────────────────────────</fg=gray>';
-                $lines[] = '';
-            }
-
-            foreach ($headersArray as $index => $header) {
-                $value = $rowArray[$index] ?? '';
-                $lines[] = self::formatLine(
-                    StringVO::from($header),
-                    StringVO::from($value),
-                    $maxKeyLength
-                );
-            }
-        }
-
-        return implode(PHP_EOL, $lines);
+        return ListCollection::from($clean);
     }
 
-    // ========== MÉTHODES PRIVÉES ==========
-
-    private static function calculateMaxKeyLength(array $headers): int
+    private static function cleanEmojisFromRows(ListCollection $rows): ListCollection
     {
-        $max = 0;
+        $cleanRows = [];
+        foreach ($rows as $row) {
+            $rowArray = $row instanceof ListCollection ? $row->toArray() : (array) $row;
+            $cleanRow = [];
+            foreach ($rowArray as $cell) {
+                $cleanRow[] = (new CleanedTextVO(StringVO::from((string) $cell)->getValue()))->withoutEmojis()->getValue();
+            }
+            $cleanRows[] = ListCollection::from($cleanRow);
+        }
+
+        return ListCollection::from($cleanRows);
+    }
+
+    // ========== MÉTHODES DE CALCUL ==========
+
+    private static function calculateMaxKeyLength(array $headers): FloatVO
+    {
+        $max = FloatVO::from(0);
         foreach ($headers as $header) {
             $length = FloatVO::from(mb_strlen(StringVO::from($header)->getValue()));
-            if ($length->greaterThan(FloatVO::from($max))->getValue()) {
-                $max = $length->toInt();
+            $max = $max->max($length);
+        }
+
+        return $max;
+    }
+
+    /**
+     * ✅ Trouve la largeur maximale parmi toutes les lignes (sans les balises ANSI)
+     */
+    private static function findMaxLineWidth(array $lines): int
+    {
+        $max = 0;
+        foreach ($lines as $line) {
+            $clean = strip_tags($line);
+            $length = mb_strlen($clean);
+            if ($length > $max) {
+                $max = $length;
             }
         }
 
-        // Limiter à MAX_KEY_WIDTH
-        return min($max + 2, self::MAX_KEY_WIDTH);
+        return $max;
     }
 
-    private static function infoHeader(array $headers, string $color = 'yellow'): string
+    // ========== BORDURES ==========
+
+    private static function topBorder(): string
+    {
+        return '<fg=cyan><options=bold>┌──────────────────────────────────────────────────┐</options=bold></fg=cyan>';
+    }
+
+    private static function bottomBorder(): string
+    {
+        return '<fg=cyan><options=bold>└──────────────────────────────────────────────────┘</options=bold></fg=cyan>';
+    }
+
+    /**
+     * ✅ Bordure supérieure avec largeur personnalisée
+     */
+    private static function topBorderWithWidth(int $width): string
+    {
+        $line = str_repeat(self::BORDER_CHAR, $width);
+
+        return '<fg=cyan><options=bold>┌'.$line.'┐</options=bold></fg=cyan>';
+    }
+
+    /**
+     * ✅ Bordure inférieure avec largeur personnalisée
+     */
+    private static function bottomBorderWithWidth(int $width): string
+    {
+        $line = str_repeat(self::BORDER_CHAR, $width);
+
+        return '<fg=cyan><options=bold>└'.$line.'┘</options=bold></fg=cyan>';
+    }
+
+    // ========== LIGNES DE CONTENU ==========
+
+    private static function formatLine(StringVO $key, StringVO $value, int $keyWidth): string
+    {
+        $keyText = $key->getValue();
+        $valueText = $value->getValue();
+
+        $paddedKey = str_pad($keyText, $keyWidth, ' ', STR_PAD_RIGHT);
+
+        return self::INDENT.'<fg=cyan>'.$paddedKey.'</fg>'.self::SEPARATOR.$valueText;
+    }
+
+    private static function infoHeader(array $headers): string
     {
         $count = count($headers);
 
-        return '<fg='.$color.'>📋 '.$count.' colonnes → affichage en liste</fg='.$color.'>';
+        return '<fg=yellow>📋 '.$count.' colonnes → affichage en liste</fg=yellow>';
     }
 
     private static function titleLine(string $title): string
     {
         return '<fg=cyan><options=bold>📋 '.$title.'</options=bold></fg=cyan>';
-    }
-
-    private static function topBorder(int $rowNumber, string $color = 'cyan'): string
-    {
-        $width = 60;
-        $line = str_repeat('─', $width - 2);
-
-        return '<fg='.$color.'><options=bold>┌─ Item #'.$rowNumber.' '.$line.'</options=bold></fg='.$color.'>';
-    }
-
-    private static function bottomBorder(string $color = 'cyan'): string
-    {
-        $width = 60;
-        $line = str_repeat('─', $width);
-
-        return '<fg='.$color.'><options=bold>└'.$line.'</options=bold></fg='.$color.'>';
-    }
-
-    private static function formatLine(
-        StringVO $key,
-        StringVO $value,
-        int $maxKeyLength
-    ): string {
-        $keyText = $key->getValue();
-        $valueText = $value->getValue();
-
-        $padding = FloatVO::from($maxKeyLength - mb_strlen($keyText));
-        $padding = $padding->max(FloatVO::from(0))->toInt();
-        $paddedKey = $keyText.str_repeat(' ', $padding);
-
-        $wrappedValue = self::wrapText($valueText, self::WRAP_WIDTH - $maxKeyLength - 4);
-
-        return self::INDENT.'<fg=cyan>'.$paddedKey.'</fg> : '.$wrappedValue;
-    }
-
-    private static function formatLineWithColor(
-        StringVO $key,
-        StringVO $value,
-        int $maxKeyLength,
-        string $color
-    ): string {
-        $keyText = $key->getValue();
-        $valueText = $value->getValue();
-
-        $padding = FloatVO::from($maxKeyLength - mb_strlen($keyText));
-        $padding = $padding->max(FloatVO::from(0))->toInt();
-        $paddedKey = $keyText.str_repeat(' ', $padding);
-
-        $wrappedValue = self::wrapText($valueText, self::WRAP_WIDTH - $maxKeyLength - 4);
-
-        return self::INDENT.'<fg='.$color.'>'.$paddedKey.'</fg> : '.$wrappedValue;
-    }
-
-    private static function wrapText(string $text, int $width): string
-    {
-        if (mb_strlen($text) <= $width) {
-            return $text;
-        }
-
-        $words = explode(' ', $text);
-        $lines = [];
-        $currentLine = '';
-
-        foreach ($words as $word) {
-            $testLine = $currentLine === '' ? $word : $currentLine.' '.$word;
-            if (mb_strlen($testLine) <= $width) {
-                $currentLine = $testLine;
-            } else {
-                if ($currentLine !== '') {
-                    $lines[] = $currentLine;
-                }
-                $currentLine = $word;
-            }
-        }
-
-        if ($currentLine !== '') {
-            $lines[] = $currentLine;
-        }
-
-        $indent = self::INDENT.str_repeat(' ', self::MAX_KEY_WIDTH + 4);
-
-        return implode("\n".$indent, $lines);
     }
 }

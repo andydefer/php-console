@@ -181,7 +181,6 @@ final class ConsoleTest extends TestCase
         $lines = $this->console->getLines();
         $this->assertCount(1, $lines);
         $this->assertStringContainsString('6 colonnes → affichage en liste', $lines[0]);
-        $this->assertStringContainsString('Item #1', $lines[0]);
         $this->assertStringContainsString('A', $lines[0]);
         $this->assertStringContainsString('B', $lines[0]);
         $this->assertStringContainsString('C', $lines[0]);

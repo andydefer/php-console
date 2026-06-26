@@ -9,6 +9,7 @@ use AndyDefer\ConsoleWriter\Console\Components\Alert;
 use AndyDefer\ConsoleWriter\Console\Components\Badge;
 use AndyDefer\ConsoleWriter\Console\Components\Columns;
 use AndyDefer\ConsoleWriter\Console\Components\Error;
+use AndyDefer\ConsoleWriter\Console\Components\Form;
 use AndyDefer\ConsoleWriter\Console\Components\Info;
 use AndyDefer\ConsoleWriter\Console\Components\Input;
 use AndyDefer\ConsoleWriter\Console\Components\JsonViewer;
@@ -292,6 +293,26 @@ final class Console implements ConsoleInterface
         $this->addLine(Tree::renderWithIcons($tree, $rootLabel, $folderIcon, $fileIcon));
 
         return $this;
+    }
+
+    // ========== FORM ==========
+
+    /**
+     * Crée un formulaire interactif
+     *
+     * @example
+     * $answers = $console->form()
+     *     ->ask('Nom complet :', 'name', null, 'yellow')
+     *     ->ask('Email :', 'email', null, 'cyan')
+     *     ->number('Âge :', 'age', 1, 120)
+     *     ->secret('Mot de passe :', 'password')
+     *     ->confirm('Newsletter ?', 'newsletter', true)
+     *     ->choice('Langage :', 'lang', ['PHP', 'JavaScript', 'Python'])
+     *     ->submit();
+     */
+    public function form(): Form
+    {
+        return new Form($this);
     }
 
     // ========== PROGRESS BAR ==========

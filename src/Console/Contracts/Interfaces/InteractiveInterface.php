@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace AndyDefer\ConsoleWriter\Console\Contracts\Interfaces;
 
+use AndyDefer\ConsoleWriter\Console\Components\Form;
+
 /**
  * Interface pour les méthodes interactives (saisies utilisateur)
  */
@@ -48,4 +50,15 @@ interface InteractiveInterface
      * Demande une sélection multiple
      */
     public function multiChoice(string $question, array $options, array $selected = [], string $color = 'cyan'): array;
+
+    /**
+     * Crée un formulaire interactif
+     *
+     * @example
+     * $answers = $console->form()
+     *     ->ask('Nom :', 'name')
+     *     ->ask('Email :', 'email')
+     *     ->submit();
+     */
+    public function form(): Form;
 }
