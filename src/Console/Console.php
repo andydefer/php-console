@@ -26,6 +26,7 @@ use AndyDefer\ConsoleWriter\Console\Components\Table;
 use AndyDefer\ConsoleWriter\Console\Components\Timeline;
 use AndyDefer\ConsoleWriter\Console\Components\Title;
 use AndyDefer\ConsoleWriter\Console\Components\Tree;
+use AndyDefer\ConsoleWriter\Console\Contracts\ConsoleInterface;
 use AndyDefer\ConsoleWriter\Console\Contracts\InputReaderInterface;
 use AndyDefer\ConsoleWriter\Console\Enums\ListStyle;
 use AndyDefer\ConsoleWriter\Console\Enums\SoundType;
@@ -37,7 +38,7 @@ use AndyDefer\DomainStructures\Utils\MapCollection;
 use AndyDefer\DomainStructures\Utils\SetCollection;
 use AndyDefer\PhpVo\ValueObjects\Types\BoolVO;
 
-final class Console
+final class Console implements ConsoleInterface
 {
     private ListCollection $lines;
 

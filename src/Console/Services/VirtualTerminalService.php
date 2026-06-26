@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AndyDefer\ConsoleWriter\Console\Services;
 
+use AndyDefer\ConsoleWriter\Console\Contracts\VirtualTerminalInterface;
 use AndyDefer\ConsoleWriter\Contracts\Services\AnsiConverterInterface;
 use AndyDefer\DomainStructures\Utils\ListCollection;
 use AndyDefer\DomainStructures\Utils\MapCollection;
@@ -25,7 +26,7 @@ use AndyDefer\DomainStructures\Utils\MapCollection;
  * $vt->remove('line2');
  * $vt->render(); // Affiche "Bonjour"
  */
-final class VirtualTerminalService
+final class VirtualTerminalService implements VirtualTerminalInterface
 {
     /**
      * @var MapCollection<string, array{content: string, position: int}>
