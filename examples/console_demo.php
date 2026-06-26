@@ -11,6 +11,7 @@ use AndyDefer\ConsoleWriter\Console\Enums\ListStyle;
 use AndyDefer\ConsoleWriter\Console\Enums\Options;
 use AndyDefer\DomainStructures\Utils\ListCollection;
 use AndyDefer\DomainStructures\Utils\MapCollection;
+use AndyDefer\DomainStructures\Utils\SetCollection;
 
 echo "\n";
 
@@ -463,4 +464,140 @@ $console
     ->info('Fin de la démonstration')
     ->render();
 
-echo "\n";
+$tree = MapCollection::from([
+    'src' => MapCollection::from([
+        'Console' => MapCollection::from([
+            'Components' => MapCollection::from([
+                'Table.php' => MapCollection::from([]),
+                'Tree.php' => MapCollection::from([]),
+            ]),
+            'Services' => MapCollection::from([
+                'AnsiConverterService.php' => MapCollection::from([]),
+            ]),
+        ]),
+        'Contracts' => MapCollection::from([
+            'Renderable.php' => MapCollection::from([]),
+        ]),
+    ]),
+    'tests' => MapCollection::from([
+        'Unit' => MapCollection::from([
+            'Components' => MapCollection::from([
+                'TreeTest.php' => MapCollection::from([]),
+            ]),
+        ]),
+    ]),
+]);
+
+$console
+    ->title('📁 Structure du projet')
+    ->line()
+    ->tree($tree, '📦 php-console-writer')
+    ->line()
+    ->treeWithColors($tree, '📦 php-console-writer', 'cyan', 'white')
+    ->line()
+    ->treeWithIcons($tree, '📦 php-console-writer', '📂', '📄')
+    ->render();
+
+// 2. Arbre à partir de chemins
+$paths = SetCollection::from([
+    'src/Console/Components',
+    'src/Console/Services',
+    'src/Console/Enums',
+    'tests/Unit/Components',
+    'tests/Unit/Services',
+    'README.md',
+    'LICENSE',
+    'composer.json',
+]);
+
+$console
+    ->title('📊 Dashboard Système')
+    ->line()
+    ->metricWithIcon('CPU', '45%', '🖥️', 'yellow')
+    ->line()
+    ->metricWithIcon('RAM', '8.2 / 16.0 GB', '💾', 'green')
+    ->metricWithIcon('DISQUE', '256 / 512 GB', '💿', 'cyan')
+    ->metricWithIcon('RÉSEAU', '1.2 Gbps', '🌐', 'blue')
+    ->line()
+    ->table(
+        ['Service', 'Status', 'Uptime'],
+        [
+            ['PHP-FPM', '✅ Running', '72h'],
+            ['MySQL', '✅ Running', '168h'],
+            ['Redis', '❌ Failed', '0h'],
+            ['Nginx', '✅ Running', '720h'],
+        ]
+    )
+    ->line()
+    ->success('✅ Dashboard chargé avec succès !')
+    ->render();
+
+$data = [
+    'user' => [
+        'id' => 1,
+        'name' => 'Andy',
+        'email' => 'andy@example.com',
+        'active' => true,
+        'score' => 98.5,
+    ],
+];
+
+$console->json($data);
+
+$console->jsonRaw($data);
+
+$console->columns([
+    ['Users', '123'],
+    ['Servers', '5'],
+    ['Logs', '42'],
+]);
+
+$console->timeline([
+    ['12:00', 'Application démarrée', 'Service web initialisé sur le port 8080'],
+    ['12:01', 'Connexion DB', 'Connexion établie en 45ms'],
+    ['12:02', 'Serveur prêt', 'En attente des requêtes'],
+]);
+
+$password = $console->secret('Mot de passe ?');
+$console->success('Mot de passe enregistré !');
+
+return;
+$console
+    ->title('⚡ Badges prédéfinis')
+    ->line()
+    ->badgeSuccess()
+    ->badgeDanger()
+    ->badgeWarning()
+    ->badgeInfo()
+    ->badgePrimary()
+    ->badgeDark()
+    ->badgeLight()
+    ->line()
+    ->render();
+
+return;
+
+$console->progressBar(100, 40, '📦 Téléchargement');
+
+for ($i = 0; $i < 100; $i++) {
+    usleep(30000);
+    $console->advance();
+}
+
+$console->finish();
+
+// Une autre barre avec un style
+$console->progressBarStyled(50, 'processing', 40);
+
+for ($i = 0; $i < 50; $i++) {
+    usleep(30000);
+    $console->advance();
+}
+
+$console->finish()->success('✅ Opération terminée !');
+
+$console->spinner('Connexion à Redis...', function ($spinner) {
+    // Simulation d'un travail long
+    sleep(3);
+    $spinner->success('Connecté');
+});
