@@ -1,4 +1,4 @@
-# PHP Console
+# PHP Console Writer
 
 **Un package d'écriture console élégant et fluide pour PHP avec des composants stylisés.**
 
@@ -13,26 +13,30 @@
 2. [Concepts fondamentaux](#concepts-fondamentaux)
 3. [Démarrage rapide](#démarrage-rapide)
 4. [Messages stylisés](#messages-stylisés)
-5. [Tableaux](#tableaux)
-6. [Listes](#listes)
-7. [Clés → Valeurs](#clés--valeurs)
-8. [Liens](#liens)
-9. [Badges](#badges)
-10. [Métriques](#métriques)
-11. [Colonnes](#colonnes)
-12. [Timeline](#timeline)
-13. [Arborescence (Tree)](#arborescence-tree)
-14. [JSON Viewer](#json-viewer)
-15. [Barre de progression](#barre-de-progression)
-16. [Spinner](#spinner)
-17. [Logger](#logger)
-18. [Notifications](#notifications)
-19. [Sons](#sons)
-20. [Saisies utilisateur](#saisies-utilisateur)
-21. [Buffer et affichage différé](#buffer-et-affichage-différé)
-22. [VirtualTerminalService](#virtualterminalservice)
-23. [Exemples complets](#exemples-complets)
-24. [Licence](#licence)
+5. [Alertes](#alertes)
+6. [Tableaux](#tableaux)
+7. [Tableau adaptatif](#tableau-adaptatif)
+8. [Listes](#listes)
+9. [Clés → Valeurs](#clés--valeurs)
+10. [Liens](#liens)
+11. [Badges](#badges)
+12. [Métriques](#métriques)
+13. [Colonnes](#colonnes)
+14. [Timeline](#timeline)
+15. [Arborescence (Tree)](#arborescence-tree)
+16. [JSON Viewer](#json-viewer)
+17. [Barre de progression](#barre-de-progression)
+18. [Spinner](#spinner)
+19. [Logger](#logger)
+20. [Notifications](#notifications)
+21. [Sons](#sons)
+22. [Saisies utilisateur](#saisies-utilisateur)
+23. [Formulaire](#formulaire)
+24. [Buffer et affichage différé](#buffer-et-affichage-différé)
+25. [VirtualTerminalService](#virtualterminalservice)
+26. [Référence complète des méthodes](#référence-complète-des-méthodes)
+27. [Exemples complets](#exemples-complets)
+28. [Licence](#licence)
 
 ---
 
@@ -142,9 +146,56 @@ $console->title('📊 Dashboard Système');
 
 ---
 
+## Alertes
+
+### Alertes prédéfinies
+
+```php
+$console
+    ->alertSuccess('✅ Déploiement réussi !')
+    ->alertError('❌ Erreur critique détectée')
+    ->alertWarning('⚠️  Attention, espace disque faible')
+    ->alertInfo('ℹ️  Mise à jour disponible');
+```
+
+### Alertes personnalisées
+
+```php
+// Avec icône personnalisée
+$console->alertWithIcon('Nouveau message reçu', '📬');
+
+// Avec couleur personnalisée
+$console->alertWithColor('Alerte rouge !', 'red', 6);
+
+// Avec bordure personnalisée
+$console->alertWithBorder('Important !', '=', 'magenta', 8);
+
+// Avec icône et couleur personnalisées
+$console->alertWithIconAndColor('🎉 Félicitations !', '🎉', 'green', 6);
+
+// Version complète avec tous les paramètres
+$console->alertFull('Message complet', '🚀', 'cyan', '═', 6);
+```
+
+### Toutes les méthodes d'Alert
+
+| Méthode | Description | Exemple |
+|---------|-------------|---------|
+| `alertSuccess(string $message)` | Alerte de succès (✅ vert) | `$console->alertSuccess('OK')` |
+| `alertError(string $message)` | Alerte d'erreur (❌ rouge) | `$console->alertError('KO')` |
+| `alertWarning(string $message)` | Alerte d'avertissement (⚠️ jaune) | `$console->alertWarning('WARN')` |
+| `alertInfo(string $message)` | Alerte d'information (ℹ️ bleu) | `$console->alertInfo('INFO')` |
+| `alertWithIcon(string $message, string $icon, int $padding)` | Alerte avec icône | `$console->alertWithIcon('Message', '📬')` |
+| `alertWithColor(string $message, string $color, int $padding)` | Alerte avec couleur | `$console->alertWithColor('Message', 'red')` |
+| `alertWithIconAndColor(string $message, string $icon, string $color, int $padding)` | Alerte avec icône et couleur | `$console->alertWithIconAndColor('Message', '📬', 'red')` |
+| `alertWithBorder(string $message, string $borderChar, string $color, int $padding)` | Alerte avec bordure | `$console->alertWithBorder('Message', '=', 'cyan')` |
+| `alertFull(string $message, string $icon, string $color, string $borderChar, int $padding)` | Alerte complète | `$console->alertFull('Message', '🚀', 'cyan', '═', 6)` |
+
+---
+
 ## Tableaux
 
-### Tableau basique
+### Tableau basique (2-5 colonnes)
 
 ```php
 $console->table(
@@ -158,39 +209,63 @@ $console->table(
 );
 ```
 
-### Tableau adaptatif (> 5 colonnes → liste automatique)
-
-```php
-$console->adaptiveTable(
-    ['ID', 'Name', 'Description', 'Category', 'Price', 'Stock'],
-    [
-        ['1', 'Laptop Pro', 'High-performance laptop', 'Electronics', '1299.99', '25'],
-        ['2', 'Wireless Mouse', 'Ergonomic wireless mouse', 'Accessories', '29.99', '100'],
-    ]
-);
-```
-
 ### Rendu
 
 ```
-┌────────────────────────────────────────────────┐
+┌────────────────────────────────────────────────────────────┐
 │  Service   │  Status      │  Port  │  Version  │
-├────────────────────────────────────────────────┤
+├────────────────────────────────────────────────────────────┤
 │  PHP-FPM   │  ✅ Running  │  9000  │  8.2.15   │
 │  MySQL     │  ✅ Running  │  3306  │  8.0.35   │
 │  Redis     │  ❌ Failed   │  6379  │  7.2.4    │
 │  Nginx     │  ✅ Running  │   80   │  1.24.0   │
-└────────────────────────────────────────────────┘
+└────────────────────────────────────────────────────────────┘
+```
 
+### Avec ListCollection
+
+```php
+use AndyDefer\DomainStructures\Utils\ListCollection;
+
+$headers = ListCollection::from(['Product', 'Price', 'Stock']);
+$rows = ListCollection::from([
+    ListCollection::from(['Laptop', '999.99', '15']),
+    ListCollection::from(['Mouse', '29.99', '42']),
+]);
+
+$console->table($headers, $rows);
+```
+
+---
+
+## Tableau adaptatif
+
+Le composant `AdaptiveTable` détecte automatiquement le nombre de colonnes :
+- **≤ 5 colonnes** → affichage en tableau
+- **> 5 colonnes** → affichage en liste KeyValue
+
+```php
+$console->adaptiveTable(
+    ['Service', 'Status', 'Port', 'Version', 'Uptime', 'Memory'],
+    [
+        ['PHP-FPM', '✅ Running', '9000', '8.2.15', '72h', '128 MB'],
+        ['MySQL', '✅ Running', '3306', '8.0.35', '168h', '512 MB'],
+    ]
+);
+```
+
+### Rendu pour > 5 colonnes
+
+```
 📋 6 colonnes → affichage en liste
 
 ┌─ Item #1 ──────────────────────────────────────────────
-  ID          : 1
-  Name        : Laptop Pro
-  Description : High-performance laptop
-  Category    : Electronics
-  Price       : 1299.99
-  Stock       : 25
+  Service  : PHP-FPM
+  Status   : ✅ Running
+  Port     : 9000
+  Version  : 8.2.15
+  Uptime   : 72h
+  Memory   : 128 MB
 └────────────────────────────────────────────────────────
 ```
 
@@ -198,52 +273,65 @@ $console->adaptiveTable(
 
 ## Listes
 
-### Types de listes
+### Styles disponibles
 
 ```php
 use AndyDefer\ConsoleWriter\Console\Enums\ListStyle;
 
 $items = ['Item 1', 'Item 2', 'Item 3'];
 
-$console->list($items, ListStyle::BULLET);   // Puces
-$console->list($items, ListStyle::ARROW);    // Flèches
-$console->list($items, ListStyle::NUMBER);   // Numérotée
-$console->list($items, ListStyle::CHECK);    // ✓
-$console->list($items, ListStyle::STAR);     // ★
+// Puces (•)
+$console->list($items, ListStyle::BULLET);
 
-// Liste colorée
+// Flèches (→)
+$console->list($items, ListStyle::ARROW);
+
+// Tiret (—)
+$console->list($items, ListStyle::DASH);
+
+// Numérotée (1.)
+$console->list($items, ListStyle::NUMBER);
+
+// Alphabétique (a.)
+$console->list($items, ListStyle::ALPHA);
+
+// Romain (i.)
+$console->list($items, ListStyle::ROMAN);
+
+// Check (✓)
+$console->list($items, ListStyle::CHECK);
+
+// Croix (✗)
+$console->list($items, ListStyle::CROSS);
+
+// Étoile (★)
+$console->list($items, ListStyle::STAR);
+```
+
+### Liste colorée
+
+```php
 $console->listColored(
     ['✅ Tâche terminée', '✅ Tests passés'],
     ListStyle::CHECK,
     'green'
 );
+
+$console->listColored(
+    ['❌ Échec du build'],
+    ListStyle::CROSS,
+    'red'
+);
 ```
 
-### Rendu
+### Avec indentation
 
-```
-• Item 1
-• Item 2
-• Item 3
-
-→ Item 1
-→ Item 2
-→ Item 3
-
-1. Item 1
-2. Item 2
-3. Item 3
-
-✓ Item 1
-✓ Item 2
-✓ Item 3
-
-★ Item 1
-★ Item 2
-★ Item 3
-
-✓ Tâche terminée    (en vert)
-✓ Tests passés      (en vert)
+```php
+$console->list(
+    ['Sous-item 1', 'Sous-item 2'],
+    ListStyle::BULLET,
+    2  // Indentation de 2 niveaux
+);
 ```
 
 ---
@@ -280,33 +368,75 @@ Nom → Jean      (séparateur personnalisé)
 
 ## Liens
 
+### Liens cliquables (OSC 8)
+
 ```php
 $console->link('https://github.com/andydefer/php-console-writer');
 $console->link('https://github.com', '📦 Voir le projet sur GitHub');
 ```
 
-### Rendu
+### Avec icône
 
+```php
+use AndyDefer\ConsoleWriter\Console\Components\Link;
+
+echo Link::renderWithIcon(
+    'https://packagist.org/packages/andy-defer/php-console-writer',
+    'Packagist',
+    '📦'
+);
 ```
-https://github.com/andydefer/php-console-writer
 
-📦 Voir le projet sur GitHub
+### Avec couleur personnalisée
+
+```php
+echo Link::renderWithColor(
+    'https://github.com/andydefer/php-console-writer',
+    'GitHub Repository',
+    'magenta'
+);
+```
+
+### Avec soulignement
+
+```php
+echo Link::renderWithUnderline(
+    'https://example.com',
+    'Example',
+    'green'
+);
 ```
 
 ---
 
 ## Badges
 
-```php
-$console->badge('SUCCESS', 'success');
-$console->badge('FAILED', 'danger');
-$console->badge('PENDING', 'warning');
-$console->badgeWithIcon('SUCCESS', '🟢', 'success');
+### Badges prédéfinis
 
-$console->badgeSuccess('OK');
-$console->badgeDanger('KO');
-$console->badgeWarning('WARN');
-$console->badgeInfo('INFO');
+```php
+$console
+    ->badgeSuccess('SUCCESS')
+    ->badgeDanger('FAILED')
+    ->badgeWarning('PENDING')
+    ->badgeInfo('INFO')
+    ->badgePrimary('PRIMARY')
+    ->badgeDark('DARK')
+    ->badgeLight('LIGHT');
+```
+
+### Avec icône
+
+```php
+$console->badgeWithIcon('Déploiement', '🚀', 'success');
+```
+
+### Badge personnalisé
+
+```php
+$console->badge('PERSONNALISÉ', 'custom');
+
+// Ajouter un style personnalisé
+Badge::addStyle('custom', 'magenta', '💜', 'CUSTOM');
 ```
 
 ### Rendu
@@ -315,12 +445,11 @@ $console->badgeInfo('INFO');
 [SUCCESS]   (vert)
 [FAILED]    (rouge)
 [PENDING]   (jaune)
+[INFO]      (bleu)
+[PRIMARY]   (cyan)
 
-🟢 [SUCCESS]  (vert avec icône)
-🟢 [OK]       (succès)
-🔴 [KO]       (danger)
-🟡 [WARN]     (avertissement)
-🔵 [INFO]     (info)
+🚀 [DÉPLOIEMENT] (vert avec icône)
+[PERSONNALISÉ]  (magenta)
 ```
 
 ---
@@ -328,9 +457,16 @@ $console->badgeInfo('INFO');
 ## Métriques
 
 ```php
+// Métrique simple
 $console->metric('CPU', '45%', 'yellow');
+
+// Avec icône
 $console->metricWithIcon('RAM', '8.2 GB', '💾', 'green');
+
+// Avec tendance
 $console->metricWithTrend('CPU', '45%', '↑ 5%', 'green');
+
+// En ligne (compact)
 $console->metricInline('Uptime', '72h', 'cyan');
 ```
 
@@ -419,6 +555,8 @@ $console->timelineWithStatus($events, ['success', 'warning', 'error']);
 
 ## Arborescence (Tree)
 
+### Arbre simple
+
 ```php
 use AndyDefer\DomainStructures\Utils\MapCollection;
 
@@ -434,10 +572,25 @@ $tree = MapCollection::from([
 ]);
 
 $console->tree($tree, '📦 Project');
-$console->treeWithColors($tree, '📦 Project', 'cyan', 'white');
-$console->treeWithIcons($tree, '📦 Project', '📂', '📄');
+```
 
-// À partir de chemins
+### Avec couleurs
+
+```php
+$console->treeWithColors($tree, '📦 Project', 'cyan', 'white');
+```
+
+### Avec icônes
+
+```php
+$console->treeWithIcons($tree, '📦 Project', '📂', '📄');
+```
+
+### À partir de chemins (méthode la plus simple)
+
+```php
+use AndyDefer\DomainStructures\Utils\SetCollection;
+
 $paths = SetCollection::from([
     'src/Console/Components',
     'src/Console/Services',
@@ -482,6 +635,7 @@ $data = ['user' => ['id' => 1, 'name' => 'Andy', 'active' => true]];
 
 $console->json($data);
 $console->jsonCompact($data);
+$console->jsonWithDepth($data, 2);
 ```
 
 ### Rendu
@@ -494,11 +648,19 @@ $console->jsonCompact($data);
 }
 
 {"user":{"id":1,"name":"Andy","active":true}}
+
+"user": {
+  "id": 1,
+  "name": "Andy",
+  "active": true
+}
 ```
 
 ---
 
 ## Barre de progression
+
+### Barre simple
 
 ```php
 $console->progressBar(100, 40, '📦 Téléchargement');
@@ -509,54 +671,116 @@ for ($i = 0; $i < 100; $i++) {
 }
 
 $console->finish();
+```
 
+### Styles prédéfinis
+
+| Style | Description |
+|-------|-------------|
+| `default` | Style par défaut |
+| `download` | Style téléchargement |
+| `processing` | Style traitement |
+| `upload` | Style upload |
+| `install` | Style installation |
+| `cleanup` | Style nettoyage |
+
+```php
 $console->progressBarStyled(50, 'processing', 40);
 ```
 
-### Rendu
+### Avancement par pas
 
-```
-📦 Téléchargement [████████████████████████████████████████] 100%
-⚙️  Processing    [██████████████████████████████░░░░░░░]  70%
+```php
+$console->progressBar(100, 40, '📊 Chargement');
+
+for ($i = 0; $i < 10; $i++) {
+    usleep(100000);
+    $console->advance(10); // Avance de 10% à chaque étape
+}
+
+$console->finish();
 ```
 
 ---
 
 ## Spinner
 
+### Tâche simple
+
 ```php
 $console->spinner('Connexion à Redis...', function($spinner) {
     sleep(3);
     $spinner->success('Connecté');
 });
+```
 
-$console->spinnerWait('En attente du service...', function() {
-    return $service->isReady();
+### Avec erreur
+
+```php
+$console->spinner('Connexion à Redis...', function($spinner) {
+    sleep(2);
+    $spinner->error('Connexion échouée');
 });
 ```
 
-### Rendu
+### Avec changement de message
 
+```php
+$console->spinner('Étape 1 : Analyse...', function($spinner) {
+    sleep(1);
+    $spinner->setMessage('Étape 2 : Téléchargement...');
+    sleep(1);
+    $spinner->setMessage('Étape 3 : Installation...');
+    sleep(1);
+    $spinner->success('Installation terminée !');
+});
 ```
-⠋ Connexion à Redis...
-⠙ Connexion à Redis...
-⠹ Connexion à Redis...
-✅ Connecté
 
-⏳ En attente du service...
-✅ Service prêt
+### Attente conditionnelle
+
+```php
+$counter = 0;
+$console->spinnerWait('En attente du service...', function() use (&$counter) {
+    $counter++;
+    return $counter >= 5;
+});
+
+$console->success('✅ Service prêt !');
 ```
 
 ---
 
 ## Logger
 
+### Niveaux de logs
+
 ```php
-$console->logInfo('Chargement...');
-$console->logSuccess('✅ Terminé');
-$console->logError('❌ Erreur');
-$console->logWarning('⚠️ Attention');
-$console->logDebug('Debug info');
+$console
+    ->logInfo('Chargement...')
+    ->logSuccess('✅ Terminé')
+    ->logError('❌ Erreur')
+    ->logWarning('⚠️ Attention')
+    ->logDebug('Debug info')
+    ->logNotice('Maintenance programmée')
+    ->logCritical('Service hors ligne !');
+```
+
+### Format personnalisé
+
+```php
+use AndyDefer\ConsoleWriter\Console\Components\Logger;
+
+Logger::setTimeFormat('Y-m-d H:i:s');
+echo Logger::info('Format Y-m-d H:i:s');
+
+// Restaurer le format par défaut
+Logger::setTimeFormat('H:i:s');
+```
+
+### Log personnalisé
+
+```php
+echo Logger::log('CUSTOM', 'Message personnalisé', 'magenta');
 ```
 
 ### Rendu
@@ -567,6 +791,9 @@ $console->logDebug('Debug info');
 [14:30:02] ERROR    - ❌ Erreur
 [14:30:03] WARNING  - ⚠️ Attention
 [14:30:04] DEBUG    - Debug info
+[14:30:05] NOTICE   - Maintenance programmée
+[14:30:06] CRITICAL - Service hors ligne !
+[14:30:07] CUSTOM   - Message personnalisé
 ```
 
 ---
@@ -574,10 +801,11 @@ $console->logDebug('Debug info');
 ## Notifications
 
 ```php
-$console->notifySuccess('Déploiement réussi');
-$console->notifyError('Erreur critique');
-$console->notifyWarning('Cache à nettoyer');
-$console->notifyInfo('Nouvelle mise à jour');
+$console
+    ->notifySuccess('Déploiement réussi')
+    ->notifyError('Erreur critique')
+    ->notifyWarning('Cache à nettoyer')
+    ->notifyInfo('Nouvelle mise à jour');
 ```
 
 ### Rendu
@@ -591,6 +819,22 @@ $console->notifyInfo('Nouvelle mise à jour');
 
 ---
 
+## Sons
+
+```php
+$console->soundSuccess();  // Son de succès
+$console->soundError();    // Son d'erreur
+$console->soundInfo();     // Son d'information
+
+// Son personnalisé
+$console->sound(SoundType::SUCCESS);
+
+// Son asynchrone (ne bloque pas)
+$console->soundAsync(SoundType::SUCCESS);
+```
+
+---
+
 ## Saisies utilisateur
 
 ### Ask - Saisie simple
@@ -598,12 +842,14 @@ $console->notifyInfo('Nouvelle mise à jour');
 ```php
 $name = $console->ask('Quel est votre nom ?');
 $city = $console->ask('Ville ?', 'Paris'); // Valeur par défaut
+$color = $console->ask('Couleur ?', null, 'yellow'); // Couleur personnalisée
 ```
 
 ### Secret - Mot de passe masqué
 
 ```php
 $password = $console->secret('Mot de passe :');
+$apiKey = $console->secret('Clé API :', 'yellow');
 ```
 
 ### Confirm - Oui/Non
@@ -613,6 +859,11 @@ if ($console->confirm('Voulez-vous continuer ?', true)) {
     // Oui
 } else {
     // Non
+}
+
+// Avec couleur personnalisée
+if ($console->confirm('Accepter ?', true, 'yellow')) {
+    // Oui
 }
 ```
 
@@ -624,17 +875,92 @@ $lang = $console->choice(
     ['PHP', 'JavaScript', 'Python', 'Go'],
     0 // Index par défaut
 );
+
+// Avec couleur personnalisée
+$lang = $console->choice('Langage :', $options, null, 'yellow');
 ```
 
-### Rendu
+### Suggest - Autocomplétion
 
+```php
+$colors = ['red', 'green', 'blue', 'yellow'];
+$color = $console->suggest('Choisissez une couleur :', $colors);
 ```
-Quel est votre nom ? : Jean
-Ville ? [Paris] : Paris
-Mot de passe : ****
-Voulez-vous continuer ? [Y/n] : y
-Choisissez votre langage : (PHP, JavaScript, Python, Go) [PHP] : JavaScript
+
+### Number - Saisie numérique
+
+```php
+$age = $console->number('Âge :', 0, 150);       // Min 0, Max 150
+$score = $console->number('Score :', 0, 100);   // Avec validation
+$quantity = $console->number('Quantité :', 1);  // Min 1
 ```
+
+### ConfirmWithTimeout - Confirmation avec délai
+
+```php
+$console->info('⏳ Vous avez 5 secondes pour répondre...');
+$result = $console->confirmWithTimeout(
+    'Confirmer l\'opération ?',
+    5,      // Timeout en secondes
+    true    // Valeur par défaut si timeout
+);
+```
+
+### MultiChoice - Sélection multiple
+
+```php
+$selected = $console->multiChoice(
+    'Choisissez vos langages préférés :',
+    ['PHP', 'JavaScript', 'Python', 'Go'],
+    ['PHP', 'JavaScript'] // Sélectionnés par défaut
+);
+```
+
+---
+
+## Formulaire
+
+```php
+$answers = $console->form()
+    ->title('📝 Formulaire d\'inscription')
+    ->line()
+    ->ask('Nom complet :', 'name', null, 'yellow')
+    ->ask('Email :', 'email', null, 'cyan')
+    ->number('Âge :', 'age', 1, 120)
+    ->secret('Mot de passe :', 'password')
+    ->confirm('Newsletter ?', 'newsletter', true)
+    ->choice('Langage :', 'lang', ['PHP', 'JavaScript', 'Python'])
+    ->multiChoice('Frameworks :', 'frameworks', ['Laravel', 'React'], ['Laravel'])
+    ->summaryTable('📊 Récapitulatif')
+    ->submit();
+
+$console->title('📊 Réponses');
+$console->line();
+
+$console->keyValueWithValueColor([
+    'Nom' => $answers->get('name'),
+    'Email' => $answers->get('email'),
+    'Âge' => $answers->get('age'),
+    'Newsletter' => $answers->get('newsletter') ? '✅ Oui' : '❌ Non',
+    'Langage' => $answers->get('lang'),
+    'Frameworks' => implode(', ', $answers->get('frameworks')),
+], 'green');
+```
+
+### Méthodes du formulaire
+
+| Méthode | Description | Exemple |
+|---------|-------------|---------|
+| `title(string $title)` | Titre du formulaire | `->title('📝 Inscription')` |
+| `line()` | Saut de ligne | `->line()` |
+| `ask(string $question, string $key, string $default, string $color)` | Saisie texte | `->ask('Nom :', 'name', null, 'yellow')` |
+| `secret(string $question, string $key, string $color)` | Mot de passe | `->secret('Mot de passe :', 'password')` |
+| `confirm(string $question, string $key, bool $default)` | Oui/Non | `->confirm('Newsletter ?', 'newsletter', true)` |
+| `number(string $question, string $key, int $min, int $max, int $default)` | Saisie numérique | `->number('Âge :', 'age', 1, 120)` |
+| `choice(string $question, string $key, array $options, int $default)` | Choix unique | `->choice('Langage :', 'lang', ['PHP', 'JS'])` |
+| `multiChoice(string $question, string $key, array $options, array $selected)` | Choix multiple | `->multiChoice('Frameworks :', 'frameworks', ['Laravel', 'React'])` |
+| `summaryTable(string $title)` | Tableau récapitulatif | `->summaryTable('📊 Récapitulatif')` |
+| `submit()` | Récupère les réponses | `->submit()` |
 
 ---
 
@@ -649,12 +975,27 @@ $console
     ->render(); // Affiche tout d'un coup
 ```
 
-### Rendu
+### Méthodes de gestion du buffer
 
-```
-ℹ️  Ligne 1
-ℹ️  Ligne 2
-ℹ️  Ligne 3
+```php
+// Démarrer le buffer
+$console->startBuffer();
+
+// Ajouter des lignes
+$console->info('Test 1');
+$console->info('Test 2');
+
+// Récupérer les lignes sans afficher
+$lines = $console->getLines(); // ['Test 1', 'Test 2']
+
+// Vider le buffer sans afficher
+$console->clear();
+
+// Afficher et vider le buffer
+$console->render();
+
+// Vérifier si le buffer est actif
+$isBuffered = $console->isBuffered(); // bool
 ```
 
 ---
@@ -686,6 +1027,126 @@ RAM : 8.2 GB          (vert)
 CPU : 85% ⚠️          (rouge)
 RAM : 8.2 GB          (vert)
 ```
+
+---
+
+## Référence complète des méthodes
+
+### Console
+
+| Méthode | Description | Exemple |
+|---------|-------------|---------|
+| **Messages** | | |
+| `info(string $message)` | Message d'information (bleu) | `$console->info('Chargement...')` |
+| `success(string $message)` | Message de succès (vert) | `$console->success('Terminé !')` |
+| `error(string $message)` | Message d'erreur (rouge) | `$console->error('Erreur !')` |
+| `title(string $message)` | Titre encadré (cyan) | `$console->title('Dashboard')` |
+| **Alertes** | | |
+| `alert(string $message)` | Alerte encadrée (jaune) | `$console->alert('Attention !')` |
+| `alertSuccess(string $message)` | Alerte de succès (✅ vert) | `$console->alertSuccess('OK')` |
+| `alertError(string $message)` | Alerte d'erreur (❌ rouge) | `$console->alertError('KO')` |
+| `alertWarning(string $message)` | Alerte d'avertissement (⚠️ jaune) | `$console->alertWarning('WARN')` |
+| `alertInfo(string $message)` | Alerte d'information (ℹ️ bleu) | `$console->alertInfo('INFO')` |
+| `alertWithIcon(string $message, string $icon, int $padding)` | Alerte avec icône | `$console->alertWithIcon('Message', '📬')` |
+| `alertWithColor(string $message, string $color, int $padding)` | Alerte avec couleur | `$console->alertWithColor('Message', 'red')` |
+| `alertWithBorder(string $message, string $border, string $color, int $padding)` | Alerte avec bordure | `$console->alertWithBorder('Message', '=')` |
+| `alertWithIconAndColor(string $message, string $icon, string $color, int $padding)` | Alerte avec icône et couleur | `$console->alertWithIconAndColor('Message', '📬', 'red')` |
+| `alertFull(string $message, string $icon, string $color, string $border, int $padding)` | Alerte complète | `$console->alertFull('Message', '🚀', 'cyan', '═', 6)` |
+| **Tableaux** | | |
+| `table($headers, $rows)` | Tableau formaté | `$console->table(['A'], [['1']])` |
+| `adaptiveTable($headers, $rows)` | Tableau ou liste auto | `$console->adaptiveTable($h, $r)` |
+| **Listes** | | |
+| `list($items, ListStyle, int $indent)` | Liste à puces | `$console->list(['A'], BULLET)` |
+| `listColored($items, ListStyle, string $color)` | Liste colorée | `$console->listColored(['A'], BULLET, 'green')` |
+| **KeyValue** | | |
+| `keyValue($data, int $indent)` | Clés → valeurs | `$console->keyValue(['A'=>'1'])` |
+| `keyValueWithColor($data, string $color, int $indent)` | Clés colorées | `$console->keyValueWithColor($d, 'yellow')` |
+| `keyValueWithValueColor($data, string $color, int $indent)` | Valeurs colorées | `$console->keyValueWithValueColor($d, 'green')` |
+| `keyValueWithSeparator($data, string $separator, int $indent)` | Séparateur | `$console->keyValueWithSeparator($d, ' → ')` |
+| **Arbres** | | |
+| `tree(MapCollection $tree, string $root)` | Arbre | `$console->tree($tree, 'Root')` |
+| `treeWithColors($tree, $root, $nodeColor, $leafColor)` | Arbre avec couleurs | `$console->treeWithColors($tree, 'Root', 'green', 'yellow')` |
+| `treeWithIcons($tree, $root, $folderIcon, $fileIcon)` | Arbre avec icônes | `$console->treeWithIcons($tree, 'Root', '📂', '📄')` |
+| `treeFromPaths(SetCollection $paths, string $root)` | Arbre à partir de chemins | `$console->treeFromPaths($paths, 'Project')` |
+| **Liens** | | |
+| `link(string $url, ?string $text)` | Lien cliquable | `$console->link('https://...')` |
+| **Badges** | | |
+| `badge(string $text, string $style)` | Badge personnalisé | `$console->badge('OK', 'success')` |
+| `badgeWithIcon(string $text, string $icon, string $style)` | Badge avec icône | `$console->badgeWithIcon('OK', '✅', 'success')` |
+| `badgeSuccess(string $text)` | Badge succès | `$console->badgeSuccess('OK')` |
+| `badgeDanger(string $text)` | Badge danger | `$console->badgeDanger('KO')` |
+| `badgeWarning(string $text)` | Badge avertissement | `$console->badgeWarning('WARN')` |
+| `badgeInfo(string $text)` | Badge information | `$console->badgeInfo('INFO')` |
+| `badgePrimary(string $text)` | Badge primaire | `$console->badgePrimary('PRIMARY')` |
+| **Métriques** | | |
+| `metric(string $label, string $value, string $color)` | Métrique | `$console->metric('CPU', '45%')` |
+| `metricWithIcon(string $label, string $value, string $icon, string $color)` | Métrique avec icône | `$console->metricWithIcon('CPU', '45%', '💻')` |
+| `metricWithTrend(string $label, string $value, string $trend, string $trendColor, string $valueColor)` | Métrique avec tendance | `$console->metricWithTrend('CPU', '45%', '↑ 5%')` |
+| `metricInline(string $label, string $value, string $color)` | Métrique en ligne | `$console->metricInline('CPU', '45%')` |
+| **Colonnes** | | |
+| `columns($columns, int $width, string $separator)` | Colonnes | `$console->columns($columns)` |
+| `columnsWithColors($columns, array $colors, int $width, string $separator)` | Colonnes avec couleurs | `$console->columnsWithColors($columns, ['cyan', 'green'])` |
+| `columnsWithHeaders($columns, int $width, string $separator)` | Colonnes avec en-têtes | `$console->columnsWithHeaders($columns)` |
+| `columnsCompact($columns, string $separator)` | Colonnes compactes | `$console->columnsCompact($columns)` |
+| **Timeline** | | |
+| `timeline($events, string $color)` | Timeline | `$console->timeline($events)` |
+| `timelineWithColors($events, array $colors)` | Timeline avec couleurs | `$console->timelineWithColors($events, ['green', 'red'])` |
+| `timelineWithIcons($events, string $icon, string $color)` | Timeline avec icônes | `$console->timelineWithIcons($events, '★')` |
+| `timelineWithStatus($events, array $statuses)` | Timeline avec statuts | `$console->timelineWithStatus($events, ['success', 'error'])` |
+| **JSON** | | |
+| `json(array\|string $data)` | JSON formaté | `$console->json($data)` |
+| `jsonCompact(array\|string $data)` | JSON compact | `$console->jsonCompact($data)` |
+| `jsonWithDepth(array\|string $data, int $depth)` | JSON avec profondeur | `$console->jsonWithDepth($data, 2)` |
+| **Progression** | | |
+| `progressBar(int $total, int $width, string $prefix, string $suffix)` | Barre de progression | `$console->progressBar(100, 50, 'Download')` |
+| `progressBarStyled(int $total, string $style, int $width)` | Barre avec style | `$console->progressBarStyled(100, 'download')` |
+| `advance(int $steps)` | Avancer la barre | `$console->advance(10)` |
+| `finish()` | Terminer la barre | `$console->finish()` |
+| `spinner(string $message, callable $task, string $prefix, string $suffix)` | Spinner | `$console->spinner('Loading...', fn($s) => sleep(2))` |
+| `spinnerWait(string $message, callable $isComplete, string $prefix, string $suffix)` | Spinner en attente | `$console->spinnerWait('Waiting...', fn() => $done)` |
+| **Logger** | | |
+| `logInfo(string $message)` | Log INFO (bleu) | `$console->logInfo('Message')` |
+| `logSuccess(string $message)` | Log SUCCESS (vert) | `$console->logSuccess('OK')` |
+| `logError(string $message)` | Log ERROR (rouge) | `$console->logError('KO')` |
+| `logWarning(string $message)` | Log WARNING (jaune) | `$console->logWarning('WARN')` |
+| `logDebug(string $message)` | Log DEBUG (gris) | `$console->logDebug('Debug')` |
+| `logNotice(string $message)` | Log NOTICE (cyan) | `$console->logNotice('Notice')` |
+| `logCritical(string $message)` | Log CRITICAL (magenta) | `$console->logCritical('Critical')` |
+| `log(string $level, string $message, string $color)` | Log personnalisé | `$console->log('CUSTOM', 'Message', 'magenta')` |
+| **Notifications** | | |
+| `notify(string $message, string $type, string $icon)` | Notification | `$console->notify('Message', 'success')` |
+| `notifySuccess(string $message)` | Notification succès | `$console->notifySuccess('OK')` |
+| `notifyError(string $message)` | Notification erreur | `$console->notifyError('KO')` |
+| `notifyWarning(string $message)` | Notification avertissement | `$console->notifyWarning('WARN')` |
+| `notifyInfo(string $message)` | Notification information | `$console->notifyInfo('INFO')` |
+| **Sons** | | |
+| `soundSuccess()` | Son de succès | `$console->soundSuccess()` |
+| `soundError()` | Son d'erreur | `$console->soundError()` |
+| `soundInfo()` | Son d'information | `$console->soundInfo()` |
+| `sound(SoundType $type)` | Son personnalisé | `$console->sound(SoundType::SUCCESS)` |
+| `soundAsync(SoundType $type)` | Son asynchrone | `$console->soundAsync(SoundType::SUCCESS)` |
+| **Saisies** | | |
+| `ask(string $question, ?string $default, string $color)` | Saisie texte | `$console->ask('Nom :')` |
+| `secret(string $question, string $color)` | Mot de passe | `$console->secret('Mot de passe :')` |
+| `confirm(string $question, bool $default, string $color)` | Oui/Non | `$console->confirm('Continuer ?')` |
+| `choice(string $question, array $choices, ?int $default, string $color)` | Choix unique | `$console->choice('Langage :', ['PHP', 'JS'])` |
+| `suggest(string $question, array $suggestions, string $color)` | Autocomplétion | `$console->suggest('Couleur :', ['red', 'blue'])` |
+| `number(string $question, ?int $min, ?int $max, ?int $default, string $color)` | Saisie numérique | `$console->number('Âge :', 1, 120)` |
+| `confirmWithTimeout(string $question, int $timeout, bool $default, string $color)` | Confirmation avec délai | `$console->confirmWithTimeout('Continuer ?', 5)` |
+| `multiChoice(string $question, array $options, array $selected, string $color)` | Sélection multiple | `$console->multiChoice('Langages :', ['PHP', 'JS'])` |
+| `form()` | Formulaire | `$console->form()->ask(...)->submit()` |
+| **Utilitaires** | | |
+| `line(string $message)` | Ligne simple | `$console->line('Texte')` |
+| `newLine(int $count)` | Saut de ligne | `$console->newLine(2)` |
+| `space(int $count)` | Espaces | `$console->space(2)` |
+| `raw(string $line)` | Ligne brute | `$console->raw('<fg=green>Texte</fg=green>')` |
+| `ansi(string $text)` | Texte avec balises ANSI | `$console->ansi('<fg=green>...')` |
+| **Buffer** | | |
+| `startBuffer()` | Démarrer le buffer | `$console->startBuffer()` |
+| `render()` | Afficher le buffer | `$console->render()` |
+| `clear()` | Vider le buffer | `$console->clear()` |
+| `getLines(): array` | Récupérer les lignes | `$lines = $console->getLines()` |
+| `isBuffered(): bool` | Vérifier le buffer | `$console->isBuffered()` |
 
 ---
 
@@ -774,7 +1235,7 @@ $console
     ->render();
 ```
 
-### Exemple 3 : Formulaire interactif
+### Exemple 3 : Formulaire interactif complet
 
 ```php
 <?php
@@ -785,26 +1246,37 @@ use AndyDefer\ConsoleWriter\Console\Console;
 
 $console = new Console();
 
-$console->title('📝 Formulaire utilisateur');
-
-$name = $console->ask('Nom complet :', null, 'yellow');
-$email = $console->ask('Email :', null, 'cyan');
-$age = $console->number('Âge :', 1, 120);
-$password = $console->secret('Mot de passe :');
-$newsletter = $console->confirm('S\'abonner à la newsletter ?', true);
-$lang = $console->choice('Langage préféré :', ['PHP', 'JavaScript', 'Python', 'Go']);
+$answers = $console->form()
+    ->title('📝 Formulaire d\'inscription')
+    ->line()
+    ->ask('Nom complet :', 'name', null, 'yellow')
+    ->ask('Email :', 'email', null, 'cyan')
+    ->number('Âge :', 'age', 1, 120)
+    ->secret('Mot de passe :', 'password')
+    ->confirm('S\'abonner à la newsletter ?', 'newsletter', true)
+    ->choice('Langage préféré :', 'lang', ['PHP', 'JavaScript', 'Python', 'Go'], null, 'green')
+    ->multiChoice(
+        'Choisissez vos hobbies :',
+        'hobbies',
+        ['Lecture', 'Sport', 'Musique', 'Voyage'],
+        ['Lecture', 'Musique'],
+        'magenta'
+    )
+    ->summaryTable('📊 Récapitulatif du formulaire')
+    ->submit();
 
 $console->line();
-$console->title('📊 Récapitulatif');
+$console->title('📊 Réponses');
 $console->line();
 
 $console->keyValueWithValueColor([
-    'Nom' => $name,
-    'Email' => $email,
-    'Âge' => $age,
+    'Nom' => $answers->get('name'),
+    'Email' => $answers->get('email'),
+    'Âge' => $answers->get('age'),
     'Mot de passe' => '••••••••',
-    'Newsletter' => $newsletter ? '✅ Oui' : '❌ Non',
-    'Langage' => $lang,
+    'Newsletter' => $answers->get('newsletter') ? '✅ Oui' : '❌ Non',
+    'Langage' => $answers->get('lang'),
+    'Hobbies' => implode(', ', $answers->get('hobbies')),
 ], 'green');
 
 $console->line();
@@ -812,7 +1284,7 @@ $console->success('✅ Formulaire complété avec succès !');
 $console->render();
 ```
 
-### Exemple 4 : Dashboard dynamique avec VT
+### Exemple 4 : Dashboard dynamique avec VirtualTerminalService
 
 ```php
 <?php
