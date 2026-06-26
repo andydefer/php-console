@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AndyDefer\ConsoleWriter\Console\Services;
 
+use AndyDefer\ConsoleWriter\Contracts\Services\AnsiConverterInterface;
 use AndyDefer\DomainStructures\Utils\ListCollection;
 use AndyDefer\DomainStructures\Utils\MapCollection;
 
@@ -13,10 +14,10 @@ use AndyDefer\DomainStructures\Utils\MapCollection;
  * Fonctionne comme un DOM virtuel pour la console
  *
  * @example
- * $vt = new VirtualTerminalService();
+ * $vt = new VirtualTerminalService($ansi);
  * $vt->add('line1', 'Hello');
  * $vt->add('line2', 'World');
- * $vt->render(); // Affiche "Hello\nWorld"
+ * $vt->render(); // Affiche "Hello\nWorld" avec couleurs
  *
  * $vt->update('line1', 'Bonjour');
  * $vt->render(); // Affiche "Bonjour\nWorld"
@@ -35,9 +36,12 @@ final class VirtualTerminalService
 
     private int $lastLineCount = 0;
 
-    public function __construct()
+    private AnsiConverterInterface $ansi;
+
+    public function __construct(?AnsiConverterInterface $ansi = null)
     {
         $this->lines = MapCollection::from([]);
+        $this->ansi = $ansi ?? new AnsiConverterService;
     }
 
     /**
@@ -222,7 +226,7 @@ final class VirtualTerminalService
     }
 
     /**
-     * Rend toutes les lignes dans le terminal
+     * Rend toutes les lignes dans le terminal (avec conversion ANSI)
      */
     public function render(): self
     {
@@ -236,9 +240,13 @@ final class VirtualTerminalService
             echo "\033[2K\r";
         }
 
-        // Afficher les nouvelles lignes
+        // ✅ Convertir chaque ligne avec AnsiConverterService
         if ($lineCount > 0) {
-            echo implode(PHP_EOL, $lines).PHP_EOL;
+            $convertedLines = array_map(
+                fn ($line) => $this->ansi->convert($line),
+                $lines
+            );
+            echo implode(PHP_EOL, $convertedLines).PHP_EOL;
         }
 
         $this->lastLineCount = $lineCount;
