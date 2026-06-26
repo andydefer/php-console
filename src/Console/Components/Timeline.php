@@ -4,13 +4,10 @@ declare(strict_types=1);
 
 namespace AndyDefer\ConsoleWriter\Console\Components;
 
-use AndyDefer\ConsoleWriter\Console\Enums\FgColor;
-use AndyDefer\ConsoleWriter\Console\Enums\Options;
-use AndyDefer\ConsoleWriter\Console\Services\AnsiConverterService;
-use AndyDefer\ConsoleWriter\Contracts\Services\AnsiConverterInterface;
+use AndyDefer\ConsoleWriter\Console\Abstracts\Component;
 use AndyDefer\DomainStructures\Utils\ListCollection;
 
-final class Timeline
+final class Timeline extends Component
 {
     private const BULLET = '●';
 
@@ -24,70 +21,45 @@ final class Timeline
 
     private const DEFAULT_COLOR = 'cyan';
 
-    private static ?AnsiConverterInterface $ansi = null;
-
-    private static function getAnsi(): AnsiConverterInterface
-    {
-        if (self::$ansi === null) {
-            self::$ansi = new AnsiConverterService;
-        }
-
-        return self::$ansi;
-    }
-
     public static function render(ListCollection|array $events, string $color = self::DEFAULT_COLOR): string
     {
         $eventsCollection = self::normalizeEvents($events);
 
         if ($eventsCollection->isEmpty()) {
-            return '<fg=yellow>⚠️  No events to display</fg=yellow>';
+            return self::fg('⚠️  No events to display', 'yellow');
         }
 
-        $ansi = self::getAnsi();
         $fg = self::getFgColor($color);
         $lines = [];
-
         $total = $eventsCollection->count();
 
         foreach ($eventsCollection as $index => $event) {
             $isLast = ($index === $total - 1);
 
-            $time = $event->get(0) ?? '';
-            $title = $event->get(1) ?? '';
-            $description = $event->get(2) ?? '';
+            $time = (string) ($event->get(0) ?? '');
+            $title = (string) ($event->get(1) ?? '');
+            $description = (string) ($event->get(2) ?? '');
 
-            // ✅ S'assurer que time et title sont des strings
-            $time = is_string($time) ? $time : (string) $time;
-            $title = is_string($title) ? $title : (string) $title;
-            $description = is_string($description) ? $description : (string) $description;
-
-            // Puces centrées
-            $bullet = $ansi->colorEnum(
-                str_pad(self::BULLET, self::BULLET_WIDTH, ' ', STR_PAD_BOTH),
+            $bullet = self::fg(
+                str_pad(self::BULLET, self::BULLET_WIDTH, ' ', STR_PAD_BOTH).' ',
                 $fg
             );
 
-            // Heure en bold blanc
-            $timeFormatted = $ansi->option(
-                str_pad($time, self::TIME_WIDTH, ' ', STR_PAD_RIGHT),
-                Options::BOLD
+            $timeFormatted = ' '.self::bold(
+                str_pad($time, self::TIME_WIDTH, ' ', STR_PAD_RIGHT)
             );
 
-            $titleFormatted = $title;
-
-            $line = self::INDENT.$bullet.' '.$timeFormatted.' '.$titleFormatted;
-            $lines[] = $line;
-
-            // Description en gris
+            $titleWithDesc = $title;
             if ($description !== '') {
-                $descIndent = self::INDENT.str_repeat(' ', self::BULLET_WIDTH + 1 + self::TIME_WIDTH + 1);
-                $lines[] = $descIndent.$ansi->colorEnum($description, FgColor::GRAY);
+                $titleWithDesc .= ' '.self::fg('('.$description.')', 'gray');
             }
 
-            // Ligne verticale centrée
+            $line = self::INDENT.$bullet.$timeFormatted.' '.$titleWithDesc;
+            $lines[] = $line;
+
             if (! $isLast) {
                 $lineIndent = self::INDENT.str_repeat(' ', (int) ((self::BULLET_WIDTH - 1) / 2));
-                $lines[] = $lineIndent.$ansi->colorEnum(self::VERTICAL_LINE, FgColor::GRAY);
+                $lines[] = $lineIndent.self::bold(self::fg(self::VERTICAL_LINE, 'gray'));
             }
         }
 
@@ -99,12 +71,10 @@ final class Timeline
         $eventsCollection = self::normalizeEvents($events);
 
         if ($eventsCollection->isEmpty()) {
-            return '<fg=yellow>⚠️  No events to display</fg=yellow>';
+            return self::fg('⚠️  No events to display', 'yellow');
         }
 
-        $ansi = self::getAnsi();
         $lines = [];
-
         $total = $eventsCollection->count();
 
         foreach ($eventsCollection as $index => $event) {
@@ -112,35 +82,30 @@ final class Timeline
             $color = $colors[$index] ?? self::DEFAULT_COLOR;
             $fg = self::getFgColor($color);
 
-            $time = $event->get(0) ?? '';
-            $title = $event->get(1) ?? '';
-            $description = $event->get(2) ?? '';
+            $time = (string) ($event->get(0) ?? '');
+            $title = (string) ($event->get(1) ?? '');
+            $description = (string) ($event->get(2) ?? '');
 
-            $time = is_string($time) ? $time : (string) $time;
-            $title = is_string($title) ? $title : (string) $title;
-            $description = is_string($description) ? $description : (string) $description;
-
-            $bullet = $ansi->colorEnum(
-                str_pad(self::BULLET, self::BULLET_WIDTH, ' ', STR_PAD_BOTH),
+            $bullet = self::fg(
+                str_pad(self::BULLET, self::BULLET_WIDTH, ' ', STR_PAD_BOTH).' ',
                 $fg
             );
-            $timeFormatted = $ansi->option(
-                str_pad($time, self::TIME_WIDTH, ' ', STR_PAD_RIGHT),
-                Options::BOLD
+
+            $timeFormatted = ' '.self::bold(
+                str_pad($time, self::TIME_WIDTH, ' ', STR_PAD_RIGHT)
             );
-            $titleFormatted = $title;
 
-            $line = self::INDENT.$bullet.' '.$timeFormatted.' '.$titleFormatted;
-            $lines[] = $line;
-
+            $titleWithDesc = $title;
             if ($description !== '') {
-                $descIndent = self::INDENT.str_repeat(' ', self::BULLET_WIDTH + 1 + self::TIME_WIDTH + 1);
-                $lines[] = $descIndent.$ansi->colorEnum($description, FgColor::GRAY);
+                $titleWithDesc .= ' '.self::fg('('.$description.')', 'gray');
             }
+
+            $line = self::INDENT.$bullet.$timeFormatted.' '.$titleWithDesc;
+            $lines[] = $line;
 
             if (! $isLast) {
                 $lineIndent = self::INDENT.str_repeat(' ', (int) ((self::BULLET_WIDTH - 1) / 2));
-                $lines[] = $lineIndent.$ansi->colorEnum(self::VERTICAL_LINE, FgColor::GRAY);
+                $lines[] = $lineIndent.self::bold(self::fg(self::VERTICAL_LINE, 'gray'));
             }
         }
 
@@ -152,47 +117,40 @@ final class Timeline
         $eventsCollection = self::normalizeEvents($events);
 
         if ($eventsCollection->isEmpty()) {
-            return '<fg=yellow>⚠️  No events to display</fg=yellow>';
+            return self::fg('⚠️  No events to display', 'yellow');
         }
 
-        $ansi = self::getAnsi();
         $fg = self::getFgColor($color);
         $lines = [];
-
         $total = $eventsCollection->count();
 
         foreach ($eventsCollection as $index => $event) {
             $isLast = ($index === $total - 1);
 
-            $time = $event->get(0) ?? '';
-            $title = $event->get(1) ?? '';
-            $description = $event->get(2) ?? '';
+            $time = (string) ($event->get(0) ?? '');
+            $title = (string) ($event->get(1) ?? '');
+            $description = (string) ($event->get(2) ?? '');
 
-            $time = is_string($time) ? $time : (string) $time;
-            $title = is_string($title) ? $title : (string) $title;
-            $description = is_string($description) ? $description : (string) $description;
-
-            $bullet = $ansi->colorEnum(
-                str_pad($icon, self::BULLET_WIDTH, ' ', STR_PAD_BOTH),
+            $bullet = self::fg(
+                str_pad($icon, self::BULLET_WIDTH, ' ', STR_PAD_BOTH).' ',
                 $fg
             );
-            $timeFormatted = $ansi->option(
-                str_pad($time, self::TIME_WIDTH, ' ', STR_PAD_RIGHT),
-                Options::BOLD
+
+            $timeFormatted = ' '.self::bold(
+                str_pad($time, self::TIME_WIDTH, ' ', STR_PAD_RIGHT)
             );
-            $titleFormatted = $title;
 
-            $line = self::INDENT.$bullet.' '.$timeFormatted.' '.$titleFormatted;
-            $lines[] = $line;
-
+            $titleWithDesc = $title;
             if ($description !== '') {
-                $descIndent = self::INDENT.str_repeat(' ', self::BULLET_WIDTH + 1 + self::TIME_WIDTH + 1);
-                $lines[] = $descIndent.$ansi->colorEnum($description, FgColor::GRAY);
+                $titleWithDesc .= ' '.self::fg('('.$description.')', 'gray');
             }
+
+            $line = self::INDENT.$bullet.$timeFormatted.' '.$titleWithDesc;
+            $lines[] = $line;
 
             if (! $isLast) {
                 $lineIndent = self::INDENT.str_repeat(' ', (int) ((self::BULLET_WIDTH - 1) / 2));
-                $lines[] = $lineIndent.$ansi->colorEnum(self::VERTICAL_LINE, FgColor::GRAY);
+                $lines[] = $lineIndent.self::bold(self::fg(self::VERTICAL_LINE, 'gray'));
             }
         }
 
@@ -204,12 +162,10 @@ final class Timeline
         $eventsCollection = self::normalizeEvents($events);
 
         if ($eventsCollection->isEmpty()) {
-            return '<fg=yellow>⚠️  No events to display</fg=yellow>';
+            return self::fg('⚠️  No events to display', 'yellow');
         }
 
-        $ansi = self::getAnsi();
         $lines = [];
-
         $total = $eventsCollection->count();
 
         foreach ($eventsCollection as $index => $event) {
@@ -229,35 +185,30 @@ final class Timeline
 
             $fg = self::getFgColor($color);
 
-            $time = $event->get(0) ?? '';
-            $title = $event->get(1) ?? '';
-            $description = $event->get(2) ?? '';
+            $time = (string) ($event->get(0) ?? '');
+            $title = (string) ($event->get(1) ?? '');
+            $description = (string) ($event->get(2) ?? '');
 
-            $time = is_string($time) ? $time : (string) $time;
-            $title = is_string($title) ? $title : (string) $title;
-            $description = is_string($description) ? $description : (string) $description;
-
-            $bullet = $ansi->colorEnum(
-                str_pad($icon, self::BULLET_WIDTH, ' ', STR_PAD_BOTH),
+            $bullet = self::fg(
+                str_pad($icon, self::BULLET_WIDTH, ' ', STR_PAD_BOTH).' ',
                 $fg
             );
-            $timeFormatted = $ansi->option(
-                str_pad($time, self::TIME_WIDTH, ' ', STR_PAD_RIGHT),
-                Options::BOLD
+
+            $timeFormatted = ' '.self::bold(
+                str_pad($time, self::TIME_WIDTH, ' ', STR_PAD_RIGHT)
             );
-            $titleFormatted = $title;
 
-            $line = self::INDENT.$bullet.' '.$timeFormatted.' '.$titleFormatted;
-            $lines[] = $line;
-
+            $titleWithDesc = $title;
             if ($description !== '') {
-                $descIndent = self::INDENT.str_repeat(' ', self::BULLET_WIDTH + 1 + self::TIME_WIDTH + 1);
-                $lines[] = $descIndent.$ansi->colorEnum($description, FgColor::GRAY);
+                $titleWithDesc .= ' '.self::fg('('.$description.')', 'gray');
             }
+
+            $line = self::INDENT.$bullet.$timeFormatted.' '.$titleWithDesc;
+            $lines[] = $line;
 
             if (! $isLast) {
                 $lineIndent = self::INDENT.str_repeat(' ', (int) ((self::BULLET_WIDTH - 1) / 2));
-                $lines[] = $lineIndent.$ansi->colorEnum(self::VERTICAL_LINE, FgColor::GRAY);
+                $lines[] = $lineIndent.self::bold(self::fg(self::VERTICAL_LINE, 'gray'));
             }
         }
 
@@ -293,21 +244,5 @@ final class Timeline
         }
 
         return ListCollection::from($result);
-    }
-
-    private static function getFgColor(string $color): FgColor
-    {
-        return match ($color) {
-            'black' => FgColor::BLACK,
-            'red' => FgColor::RED,
-            'green' => FgColor::GREEN,
-            'yellow' => FgColor::YELLOW,
-            'blue' => FgColor::BLUE,
-            'magenta' => FgColor::MAGENTA,
-            'cyan' => FgColor::CYAN,
-            'white' => FgColor::WHITE,
-            'gray' => FgColor::GRAY,
-            default => FgColor::CYAN,
-        };
     }
 }

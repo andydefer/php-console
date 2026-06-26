@@ -5,9 +5,8 @@ declare(strict_types=1);
 namespace AndyDefer\ConsoleWriter\Tests\Unit\Components;
 
 use AndyDefer\ConsoleWriter\Console\Components\ProgressBar;
-use PHPUnit\Framework\TestCase;
 
-final class ProgressBarTest extends TestCase
+final class ProgressBarTest extends ComponentTestCase
 {
     protected function setUp(): void
     {

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AndyDefer\ConsoleWriter\Console\Components;
 
+use AndyDefer\ConsoleWriter\Console\Abstracts\Component;
 use AndyDefer\ConsoleWriter\Console\Enums\ListStyle;
 use AndyDefer\DomainStructures\Utils\ListCollection;
 use AndyDefer\DomainStructures\Utils\SetCollection;
@@ -23,14 +24,14 @@ use AndyDefer\PhpVo\ValueObjects\Types\StringVO;
  * // • Item 2
  * // • Item 3
  */
-final class ListComponent
+final class ListComponent extends Component
 {
     private const INDENT = '  ';
 
     public static function render(SetCollection $items, ListStyle $style = ListStyle::BULLET, int $indent = 0): string
     {
         if ($items->isEmpty()) {
-            return '<fg=yellow>⚠️  No items to display</fg=yellow>';
+            return self::fg('⚠️  No items to display', 'yellow');
         }
 
         $padding = StringVO::from('')->concat(str_repeat(self::INDENT, $indent));
@@ -57,7 +58,7 @@ final class ListComponent
     public static function renderColored(SetCollection $items, ListStyle $style = ListStyle::BULLET, string $color = 'green'): string
     {
         if ($items->isEmpty()) {
-            return '<fg=yellow>⚠️  No items to display</fg=yellow>';
+            return self::fg('⚠️  No items to display', 'yellow');
         }
 
         $lines = ListCollection::from([]);
@@ -68,9 +69,7 @@ final class ListComponent
             $position = FloatVO::from($index + 1);
             $prefix = self::getPrefix($style, $position, $total);
             $line = StringVO::from('')
-                ->concat('<fg='.$color.'>')
-                ->concat($prefix)
-                ->concat('</fg>')
+                ->concat(self::fg($prefix, $color))
                 ->concat(StringVO::from($item));
             $lines = $lines->add($line->getValue());
         }

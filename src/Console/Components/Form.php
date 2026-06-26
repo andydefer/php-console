@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AndyDefer\ConsoleWriter\Console\Components;
 
+use AndyDefer\ConsoleWriter\Console\Abstracts\InteractiveComponent;
 use AndyDefer\ConsoleWriter\Console\Contracts\ConsoleInterface;
 use AndyDefer\ConsoleWriter\Console\Enums\ListStyle;
 use AndyDefer\DomainStructures\Utils\ListCollection;
@@ -27,7 +28,7 @@ use AndyDefer\DomainStructures\Utils\SetCollection;
  *     ->table(['Champ', 'Valeur'], $answers)
  *     ->submit();
  */
-final class Form
+final class Form extends InteractiveComponent
 {
     private ConsoleInterface $console;
 
@@ -146,7 +147,7 @@ final class Form
      */
     public function listColored(SetCollection|array $items, ListStyle $style = ListStyle::BULLET, string $color = 'green'): self
     {
-        $this->console->listColored($items, $style, $color);
+        ListComponent::renderColored($items, $style, $color);
 
         return $this;
     }
@@ -166,7 +167,8 @@ final class Form
      */
     public function keyValueWithValueColor(MapCollection|array $data, string $color = 'green', int $indent = 0): self
     {
-        $this->console->keyValueWithValueColor($data, $color, $indent);
+        $dataCollection = $data instanceof MapCollection ? $data : MapCollection::from($data);
+        $this->console->line(KeyValue::renderWithValueColor($dataCollection, $color, $indent));
 
         return $this;
     }
@@ -186,7 +188,7 @@ final class Form
      */
     public function badgeSuccess(string $text = 'SUCCESS'): self
     {
-        $this->console->badgeSuccess($text);
+        $this->console->raw(Badge::success($text));
 
         return $this;
     }
@@ -196,7 +198,7 @@ final class Form
      */
     public function badgeDanger(string $text = 'FAILED'): self
     {
-        $this->console->badgeDanger($text);
+        $this->console->raw(Badge::danger($text));
 
         return $this;
     }
@@ -206,7 +208,7 @@ final class Form
      */
     public function badgeWarning(string $text = 'PENDING'): self
     {
-        $this->console->badgeWarning($text);
+        $this->console->raw(Badge::warning($text));
 
         return $this;
     }
@@ -461,7 +463,9 @@ final class Form
             } elseif ($key === 'password' || $key === 'mot_de_passe' || str_contains($key, 'password')) {
                 $value = '••••••••';
             }
-            $this->console->keyValueWithValueColor([$key => $value], $color);
+
+            $data = MapCollection::from([$key => $value]);
+            $this->console->line(KeyValue::renderWithValueColor($data, $color, 0));
         }
 
         $this->console->line();

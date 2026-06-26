@@ -60,9 +60,6 @@ final class Console implements ConsoleInterface
         $this->ansiConverter = $ansiConverter ?? new AnsiConverterService;
     }
 
-    /**
-     * Retourne le composant Input avec injection du reader
-     */
     private function getInput(?InputReaderInterface $reader = null): Input
     {
         if ($this->input === null) {
@@ -72,7 +69,7 @@ final class Console implements ConsoleInterface
         return $this->input;
     }
 
-    // ========== COMPOSANTS EXISTANTS ==========
+    // ========== RENDERABLE INTERFACE ==========
 
     public function info(string $message): self
     {
@@ -95,13 +92,6 @@ final class Console implements ConsoleInterface
         return $this;
     }
 
-    public function alert(string $message): self
-    {
-        $this->addLine(Alert::render($message));
-
-        return $this;
-    }
-
     public function title(string $message): self
     {
         $this->addLine(Title::render($message));
@@ -109,130 +99,86 @@ final class Console implements ConsoleInterface
         return $this;
     }
 
-    public function table(ListCollection|array $headers, ListCollection|array $rows): self
+    public function alert(string $message): self
     {
-        $headersCollection = $headers instanceof ListCollection
-            ? $headers
-            : ListCollection::from($headers);
-
-        $rowsCollection = $rows instanceof ListCollection
-            ? $rows
-            : ListCollection::from($rows);
-
-        $this->addLine(Table::render($headersCollection, $rowsCollection));
+        $this->addLine(Alert::render($message));
 
         return $this;
     }
 
-    public function adaptiveTable(ListCollection|array $headers, ListCollection|array $rows): self
+    public function alertWithIcon(string $message, string $icon, int $padding = 4): self
     {
-        $headersCollection = $headers instanceof ListCollection
-            ? $headers
-            : ListCollection::from($headers);
-
-        $rowsCollection = $rows instanceof ListCollection
-            ? $rows
-            : ListCollection::from($rows);
-
-        $this->addLine(AdaptiveTable::render($headersCollection, $rowsCollection));
+        $this->addLine(Alert::renderWithIcon($message, $icon, $padding));
 
         return $this;
     }
 
-    // ========== NOUVEAUX COMPOSANTS ==========
-
-    public function link(string $url, ?string $text = null): self
+    public function alertWithColor(string $message, string $color, int $padding = 4): self
     {
-        if ($text === null) {
-            $this->addLine(Link::render($url));
-        } else {
-            $this->addLine(Link::renderWithText($url, $text));
-        }
+        $this->addLine(Alert::renderWithColor($message, $color, $padding));
 
         return $this;
     }
 
-    public function list(SetCollection|array $items, ListStyle $style = ListStyle::BULLET, int $indent = 0): self
+    public function alertWithIconAndColor(string $message, string $icon, string $color, int $padding = 4): self
     {
-        $itemsCollection = $items instanceof SetCollection
-            ? $items
-            : SetCollection::from($items);
-
-        $this->addLine(ListComponent::render($itemsCollection, $style, $indent));
+        $this->addLine(Alert::renderWithIconAndColor($message, $icon, $color, $padding));
 
         return $this;
     }
 
-    public function listColored(SetCollection|array $items, ListStyle $style = ListStyle::BULLET, string $color = 'green'): self
+    public function alertWithBorder(string $message, string $borderChar, string $color = 'yellow', int $padding = 4): self
     {
-        $itemsCollection = $items instanceof SetCollection
-            ? $items
-            : SetCollection::from($items);
-
-        $this->addLine(ListComponent::renderColored($itemsCollection, $style, $color));
+        $this->addLine(Alert::renderWithBorder($message, $borderChar, $color, $padding));
 
         return $this;
     }
 
-    public function keyValue(MapCollection|array $data, int $indent = 0): self
+    public function alertFull(string $message, string $icon, string $color, string $borderChar, int $padding): self
     {
-        $dataCollection = $data instanceof MapCollection
-            ? $data
-            : MapCollection::from($data);
-
-        $this->addLine(KeyValue::render($dataCollection, $indent));
+        $this->addLine(Alert::renderFull($message, $icon, $color, $borderChar, $padding));
 
         return $this;
     }
 
-    public function keyValueWithColor(MapCollection|array $data, string $keyColor = 'cyan', int $indent = 0): self
+    public function alertSuccess(string $message): self
     {
-        $dataCollection = $data instanceof MapCollection
-            ? $data
-            : MapCollection::from($data);
-
-        $this->addLine(KeyValue::renderWithColor($dataCollection, $keyColor, $indent));
+        $this->addLine(Alert::renderSuccess($message));
 
         return $this;
     }
 
-    public function keyValueWithValueColor(MapCollection|array $data, string $valueColor = 'green', int $indent = 0): self
+    public function alertError(string $message): self
     {
-        $dataCollection = $data instanceof MapCollection
-            ? $data
-            : MapCollection::from($data);
-
-        $this->addLine(KeyValue::renderWithValueColor($dataCollection, $valueColor, $indent));
+        $this->addLine(Alert::renderError($message));
 
         return $this;
     }
 
-    public function keyValueWithSeparator(MapCollection|array $data, string $separator = ' → ', int $indent = 0): self
+    public function alertWarning(string $message): self
     {
-        $dataCollection = $data instanceof MapCollection
-            ? $data
-            : MapCollection::from($data);
-
-        $this->addLine(KeyValue::renderWithSeparator($dataCollection, $separator, $indent));
+        $this->addLine(Alert::renderWarning($message));
 
         return $this;
     }
 
-    // ========== MÉTHODES D'ACCÈS AU SERVICE ANSI ==========
-
-    public function getAnsiConverter(): AnsiConverterInterface
+    public function alertInfo(string $message): self
     {
-        return $this->ansiConverter;
-    }
-
-    public function ansi(string $text): self
-    {
-        $this->addLine($this->ansiConverter->convert($text));
+        $this->addLine(Alert::renderInfo($message));
 
         return $this;
     }
 
-    // ========== MÉTHODES UTILITAIRES ==========
+    /**
+     * Ajoute une ligne brute (déjà formatée) sans conversion ANSI supplémentaire
+     * Utile pour insérer des composants statiques dans le chaînage
+     */
+    public function raw(string $line): self
+    {
+        $this->addLine($line);
+
+        return $this;
+    }
 
     public function line(string $message = ''): self
     {
@@ -248,16 +194,94 @@ final class Console implements ConsoleInterface
         return $this;
     }
 
-    private function addLine(string $line): void
+    // ========== STYLED COMPONENTS INTERFACE ==========
+
+    // --- LINK ---
+
+    public function link(string $url, ?string $text = null): self
     {
-        if ($this->buffered->getValue()) {
-            $this->lines = $this->lines->add($line);
+        if ($text === null) {
+            $this->addLine(Link::render($url));
         } else {
-            echo $this->ansiConverter->convert($line).PHP_EOL;
+            $this->addLine(Link::renderWithText($url, $text));
         }
+
+        return $this;
     }
 
-    // ========== TREE COMPONENT ==========
+    // --- LIST ---
+
+    public function list(SetCollection|array $items, ListStyle $style = ListStyle::BULLET, int $indent = 0): self
+    {
+        $itemsCollection = $items instanceof SetCollection ? $items : SetCollection::from($items);
+        $this->addLine(ListComponent::render($itemsCollection, $style, $indent));
+
+        return $this;
+    }
+
+    public function listColored(SetCollection|array $items, ListStyle $style = ListStyle::BULLET, string $color = 'green'): self
+    {
+        $itemsCollection = $items instanceof SetCollection ? $items : SetCollection::from($items);
+        $this->addLine(ListComponent::renderColored($itemsCollection, $style, $color));
+
+        return $this;
+    }
+
+    // --- KEY VALUE ---
+
+    public function keyValue(MapCollection|array $data, int $indent = 0): self
+    {
+        $dataCollection = $data instanceof MapCollection ? $data : MapCollection::from($data);
+        $this->addLine(KeyValue::render($dataCollection, $indent));
+
+        return $this;
+    }
+
+    public function keyValueWithColor(MapCollection|array $data, string $keyColor = 'cyan', int $indent = 0): self
+    {
+        $dataCollection = $data instanceof MapCollection ? $data : MapCollection::from($data);
+        $this->addLine(KeyValue::renderWithColor($dataCollection, $keyColor, $indent));
+
+        return $this;
+    }
+
+    public function keyValueWithValueColor(MapCollection|array $data, string $valueColor = 'green', int $indent = 0): self
+    {
+        $dataCollection = $data instanceof MapCollection ? $data : MapCollection::from($data);
+        $this->addLine(KeyValue::renderWithValueColor($dataCollection, $valueColor, $indent));
+
+        return $this;
+    }
+
+    public function keyValueWithSeparator(MapCollection|array $data, string $separator = ' → ', int $indent = 0): self
+    {
+        $dataCollection = $data instanceof MapCollection ? $data : MapCollection::from($data);
+        $this->addLine(KeyValue::renderWithSeparator($dataCollection, $separator, $indent));
+
+        return $this;
+    }
+
+    // --- TABLE ---
+
+    public function table(ListCollection|array $headers, ListCollection|array $rows): self
+    {
+        $headersCollection = $headers instanceof ListCollection ? $headers : ListCollection::from($headers);
+        $rowsCollection = $rows instanceof ListCollection ? $rows : ListCollection::from($rows);
+        $this->addLine(Table::render($headersCollection, $rowsCollection));
+
+        return $this;
+    }
+
+    public function adaptiveTable(ListCollection|array $headers, ListCollection|array $rows): self
+    {
+        $headersCollection = $headers instanceof ListCollection ? $headers : ListCollection::from($headers);
+        $rowsCollection = $rows instanceof ListCollection ? $rows : ListCollection::from($rows);
+        $this->addLine(AdaptiveTable::render($headersCollection, $rowsCollection));
+
+        return $this;
+    }
+
+    // --- TREE ---
 
     public function tree(MapCollection $tree, string $rootLabel = ''): self
     {
@@ -295,27 +319,408 @@ final class Console implements ConsoleInterface
         return $this;
     }
 
-    // ========== FORM ==========
+    // --- BADGE ---
 
-    /**
-     * Crée un formulaire interactif
-     *
-     * @example
-     * $answers = $console->form()
-     *     ->ask('Nom complet :', 'name', null, 'yellow')
-     *     ->ask('Email :', 'email', null, 'cyan')
-     *     ->number('Âge :', 'age', 1, 120)
-     *     ->secret('Mot de passe :', 'password')
-     *     ->confirm('Newsletter ?', 'newsletter', true)
-     *     ->choice('Langage :', 'lang', ['PHP', 'JavaScript', 'Python'])
-     *     ->submit();
-     */
+    public function badge(string $text, string $style = 'default'): self
+    {
+        $this->addLine(Badge::render($text, $style));
+
+        return $this;
+    }
+
+    public function badgeWithIcon(string $text, string $icon, string $style = 'default'): self
+    {
+        $this->addLine(Badge::renderWithIcon($text, $icon, $style));
+
+        return $this;
+    }
+
+    public function badgeSuccess(string $text = 'SUCCESS'): self
+    {
+        $this->addLine(Badge::success($text));
+
+        return $this;
+    }
+
+    public function badgeDanger(string $text = 'FAILED'): self
+    {
+        $this->addLine(Badge::danger($text));
+
+        return $this;
+    }
+
+    public function badgeWarning(string $text = 'PENDING'): self
+    {
+        $this->addLine(Badge::warning($text));
+
+        return $this;
+    }
+
+    public function badgeInfo(string $text = 'INFO'): self
+    {
+        $this->addLine(Badge::info($text));
+
+        return $this;
+    }
+
+    public function badgePrimary(string $text = 'PRIMARY'): self
+    {
+        $this->addLine(Badge::primary($text));
+
+        return $this;
+    }
+
+    public function badgeDark(string $text = 'DARK'): self
+    {
+        $this->addLine(Badge::dark($text));
+
+        return $this;
+    }
+
+    public function badgeLight(string $text = 'LIGHT'): self
+    {
+        $this->addLine(Badge::light($text));
+
+        return $this;
+    }
+
+    // --- METRIC ---
+
+    public function metric(string $label, string $value, string $color = 'white'): self
+    {
+        $this->addLine(Metric::render($label, $value, $color));
+
+        return $this;
+    }
+
+    public function metricWithIcon(string $label, string $value, string $icon, string $color = 'white'): self
+    {
+        $this->addLine(Metric::renderWithIcon($label, $value, $icon, $color));
+
+        return $this;
+    }
+
+    public function metricWithTrend(
+        string $label,
+        string $value,
+        string $trend,
+        string $trendColor = 'green',
+        string $valueColor = 'white'
+    ): self {
+        $this->addLine(Metric::renderWithTrend($label, $value, $trend, $trendColor, $valueColor));
+
+        return $this;
+    }
+
+    public function metricInline(string $label, string $value, string $color = 'white'): self
+    {
+        $this->addLine(Metric::renderInline($label, $value, $color));
+
+        return $this;
+    }
+
+    // --- COLUMNS ---
+
+    public function columns(ListCollection|array $columns, int $width = 10, string $separator = '   '): self
+    {
+        $this->addLine(Columns::render($columns, $width, $separator));
+
+        return $this;
+    }
+
+    public function columnsWithIcons(array $columns, int $width = 10, string $separator = '   '): self
+    {
+        $this->addLine(Columns::renderWithIcons($columns, $width, $separator));
+
+        return $this;
+    }
+
+    public function columnsWithColors(ListCollection|array $columns, array $colors = [], int $width = 10, string $separator = '   '): self
+    {
+        $this->addLine(Columns::renderWithColors($columns, $colors, $width, $separator));
+
+        return $this;
+    }
+
+    public function columnsWithHeaders(ListCollection|array $columns, int $width = 20, string $separator = '   '): self
+    {
+        $this->addLine(Columns::renderWithHeaders($columns, $width, $separator));
+
+        return $this;
+    }
+
+    public function columnsCompact(ListCollection|array $columns, string $separator = '   '): self
+    {
+        $this->addLine(Columns::renderCompact($columns, $separator));
+
+        return $this;
+    }
+
+    // --- TIMELINE ---
+
+    public function timeline(ListCollection|array $events, string $color = 'cyan'): self
+    {
+        $this->addLine(Timeline::render($events, $color));
+
+        return $this;
+    }
+
+    public function timelineWithColors(ListCollection|array $events, array $colors = []): self
+    {
+        $this->addLine(Timeline::renderWithColors($events, $colors));
+
+        return $this;
+    }
+
+    public function timelineWithIcons(ListCollection|array $events, string $icon = '●', string $color = 'cyan'): self
+    {
+        $this->addLine(Timeline::renderWithIcons($events, $icon, $color));
+
+        return $this;
+    }
+
+    public function timelineWithStatus(ListCollection|array $events, array $statuses = []): self
+    {
+        $this->addLine(Timeline::renderWithStatus($events, $statuses));
+
+        return $this;
+    }
+
+    // --- JSON VIEWER ---
+
+    public function json(array|string $data): self
+    {
+        $this->addLine(JsonViewer::render($data));
+
+        return $this;
+    }
+
+    public function jsonRaw(array|string $data): self
+    {
+        $this->addLine(JsonViewer::renderRaw($data));
+
+        return $this;
+    }
+
+    public function jsonCompact(array|string $data): self
+    {
+        $this->addLine(JsonViewer::renderCompact($data));
+
+        return $this;
+    }
+
+    public function jsonWithDepth(array|string $data, int $maxDepth = 3): self
+    {
+        $this->addLine(JsonViewer::renderWithDepth($data, $maxDepth));
+
+        return $this;
+    }
+
+    // --- SPACE ---
+
+    public function space(int $count = 1): self
+    {
+        $this->addLine(str_repeat(' ', $count));
+
+        return $this;
+    }
+
+    // ========== SYSTEM INTERFACE ==========
+
+    // --- ANSI ---
+
+    public function getAnsiConverter(): AnsiConverterInterface
+    {
+        return $this->ansiConverter;
+    }
+
+    public function ansi(string $text): self
+    {
+        $this->addLine($this->ansiConverter->convert($text));
+
+        return $this;
+    }
+
+    // --- NOTIFICATION ---
+
+    public function notify(string $message, string $type = 'info', string $icon = '🔔'): self
+    {
+        $this->addLine(Notification::render($message, $type, $icon));
+
+        return $this;
+    }
+
+    public function notifySuccess(string $message): self
+    {
+        $this->addLine(Notification::success($message));
+
+        return $this;
+    }
+
+    public function notifyError(string $message): self
+    {
+        $this->addLine(Notification::error($message));
+
+        return $this;
+    }
+
+    public function notifyWarning(string $message): self
+    {
+        $this->addLine(Notification::warning($message));
+
+        return $this;
+    }
+
+    public function notifyInfo(string $message): self
+    {
+        $this->addLine(Notification::info($message));
+
+        return $this;
+    }
+
+    // --- SOUND ---
+
+    public function soundSuccess(): self
+    {
+        Sound::success();
+
+        return $this;
+    }
+
+    public function soundError(): self
+    {
+        Sound::error();
+
+        return $this;
+    }
+
+    public function soundInfo(): self
+    {
+        Sound::info();
+
+        return $this;
+    }
+
+    public function sound(SoundType $type): self
+    {
+        Sound::play($type);
+
+        return $this;
+    }
+
+    public function soundAsync(SoundType $type): self
+    {
+        Sound::playAsync($type);
+
+        return $this;
+    }
+
+    // --- LOGGER ---
+
+    public function logInfo(string $message): self
+    {
+        $this->addLine(Logger::info($message));
+
+        return $this;
+    }
+
+    public function logSuccess(string $message): self
+    {
+        $this->addLine(Logger::success($message));
+
+        return $this;
+    }
+
+    public function logError(string $message): self
+    {
+        $this->addLine(Logger::error($message));
+
+        return $this;
+    }
+
+    public function logWarning(string $message): self
+    {
+        $this->addLine(Logger::warning($message));
+
+        return $this;
+    }
+
+    public function logDebug(string $message): self
+    {
+        $this->addLine(Logger::debug($message));
+
+        return $this;
+    }
+
+    public function logNotice(string $message): self
+    {
+        $this->addLine(Logger::notice($message));
+
+        return $this;
+    }
+
+    public function logCritical(string $message): self
+    {
+        $this->addLine(Logger::critical($message));
+
+        return $this;
+    }
+
+    public function log(string $level, string $message, string $color = 'white'): self
+    {
+        $this->addLine(Logger::log($level, $message, $color));
+
+        return $this;
+    }
+
+    // ========== INTERACTIVE INTERFACE ==========
+
+    public function ask(string $question, ?string $default = null, string $color = 'cyan'): string
+    {
+        return $this->getInput()->ask($question, $default, $color);
+    }
+
+    public function secret(string $question, string $color = 'cyan'): string
+    {
+        return $this->getInput()->secret($question, $color);
+    }
+
+    public function confirm(string $question, bool $default = true, string $color = 'cyan'): bool
+    {
+        return $this->getInput()->confirm($question, $default, $color);
+    }
+
+    public function choice(string $question, array $choices, ?int $default = null, string $color = 'cyan'): string
+    {
+        return $this->getInput()->choice($question, $choices, $default, $color);
+    }
+
+    public function suggest(string $question, array $suggestions, string $color = 'cyan'): string
+    {
+        return $this->getInput()->suggest($question, $suggestions, $color);
+    }
+
+    public function number(string $question, ?int $min = null, ?int $max = null, ?int $default = null, string $color = 'cyan'): int
+    {
+        return $this->getInput()->number($question, $min, $max, $default, $color);
+    }
+
+    public function confirmWithTimeout(string $question, int $timeout = 5, bool $default = true, string $color = 'cyan'): bool
+    {
+        return $this->getInput()->confirmWithTimeout($question, $timeout, $default, $color);
+    }
+
+    public function multiChoice(string $question, array $options, array $selected = [], string $color = 'cyan'): array
+    {
+        return $this->getInput()->multiChoice($question, $options, $selected, $color);
+    }
+
     public function form(): Form
     {
         return new Form($this);
     }
 
-    // ========== PROGRESS BAR ==========
+    // ========== PROGRESS INTERFACE ==========
 
     public function progressBar(int $total, int $width = 50, string $prefix = '', string $suffix = ''): self
     {
@@ -387,8 +792,6 @@ final class Console implements ConsoleInterface
         return $this->progressBar;
     }
 
-    // ========== SPINNER ==========
-
     public function spinner(string $message, callable $task, string $prefix = '', string $suffix = ''): self
     {
         $spinner = new Spinner($message, $prefix, $suffix);
@@ -409,437 +812,16 @@ final class Console implements ConsoleInterface
         return $this;
     }
 
-    // ========== BADGE ==========
+    // ========== BUFFER INTERFACE ==========
 
-    public function badge(string $text, string $style = 'default'): self
+    private function addLine(string $line): void
     {
-        $this->addLine(Badge::render($text, $style));
-
-        return $this;
+        if ($this->buffered->getValue()) {
+            $this->lines = $this->lines->add($line);
+        } else {
+            echo $this->ansiConverter->convert($line).PHP_EOL;
+        }
     }
-
-    public function badgeWithIcon(string $text, string $icon, string $style = 'default'): self
-    {
-        $this->addLine(Badge::renderWithIcon($text, $icon, $style));
-
-        return $this;
-    }
-
-    public function badgeSuccess(string $text = 'SUCCESS'): self
-    {
-        $this->addLine(Badge::success($text));
-
-        return $this;
-    }
-
-    public function badgeDanger(string $text = 'FAILED'): self
-    {
-        $this->addLine(Badge::danger($text));
-
-        return $this;
-    }
-
-    public function badgeWarning(string $text = 'PENDING'): self
-    {
-        $this->addLine(Badge::warning($text));
-
-        return $this;
-    }
-
-    public function badgeInfo(string $text = 'INFO'): self
-    {
-        $this->addLine(Badge::info($text));
-
-        return $this;
-    }
-
-    public function badgePrimary(string $text = 'PRIMARY'): self
-    {
-        $this->addLine(Badge::primary($text));
-
-        return $this;
-    }
-
-    public function badgeDark(string $text = 'DARK'): self
-    {
-        $this->addLine(Badge::dark($text));
-
-        return $this;
-    }
-
-    public function badgeLight(string $text = 'LIGHT'): self
-    {
-        $this->addLine(Badge::light($text));
-
-        return $this;
-    }
-
-    // ========== METRIC ==========
-
-    public function metric(string $label, string $value, string $color = 'white'): self
-    {
-        $this->addLine(Metric::render($label, $value, $color));
-
-        return $this;
-    }
-
-    public function metricWithIcon(string $label, string $value, string $icon, string $color = 'white'): self
-    {
-        $this->addLine(Metric::renderWithIcon($label, $value, $icon, $color));
-
-        return $this;
-    }
-
-    public function metricWithTrend(
-        string $label,
-        string $value,
-        string $trend,
-        string $trendColor = 'green',
-        string $valueColor = 'white'
-    ): self {
-        $this->addLine(Metric::renderWithTrend($label, $value, $trend, $trendColor, $valueColor));
-
-        return $this;
-    }
-
-    public function metricInline(string $label, string $value, string $color = 'white'): self
-    {
-        $this->addLine(Metric::renderInline($label, $value, $color));
-
-        return $this;
-    }
-
-    // ========== JSON VIEWER ==========
-
-    public function json(array|string $data): self
-    {
-        $this->addLine(JsonViewer::render($data));
-
-        return $this;
-    }
-
-    public function jsonRaw(array|string $data): self
-    {
-        $this->addLine(JsonViewer::renderRaw($data));
-
-        return $this;
-    }
-
-    public function jsonCompact(array|string $data): self
-    {
-        $this->addLine(JsonViewer::renderCompact($data));
-
-        return $this;
-    }
-
-    public function jsonWithDepth(array|string $data, int $maxDepth = 3): self
-    {
-        $this->addLine(JsonViewer::renderWithDepth($data, $maxDepth));
-
-        return $this;
-    }
-
-    // ========== COLUMNS ==========
-
-    public function columns(array $columns, int $width = 10, string $separator = '   '): self
-    {
-        $this->addLine(Columns::render($columns, $width, $separator));
-
-        return $this;
-    }
-
-    public function columnsWithIcons(array $columns, int $width = 10, string $separator = '   '): self
-    {
-        $this->addLine(Columns::renderWithIcons($columns, $width, $separator));
-
-        return $this;
-    }
-
-    public function columnsWithColors(array $columns, array $colors = [], int $width = 10, string $separator = '   '): self
-    {
-        $this->addLine(Columns::renderWithColors($columns, $colors, $width, $separator));
-
-        return $this;
-    }
-
-    public function columnsWithHeaders(array $columns, int $width = 20, string $separator = '   '): self
-    {
-        $this->addLine(Columns::renderWithHeaders($columns, $width, $separator));
-
-        return $this;
-    }
-
-    public function columnsCompact(array $columns, string $separator = '   '): self
-    {
-        $this->addLine(Columns::renderCompact($columns, $separator));
-
-        return $this;
-    }
-
-    // ========== TIMELINE ==========
-
-    public function timeline(ListCollection|array $events, string $color = 'cyan'): self
-    {
-        $this->addLine(Timeline::render($events, $color));
-
-        return $this;
-    }
-
-    public function timelineWithColors(ListCollection|array $events, array $colors = []): self
-    {
-        $this->addLine(Timeline::renderWithColors($events, $colors));
-
-        return $this;
-    }
-
-    public function timelineWithIcons(ListCollection|array $events, string $icon = '●', string $color = 'cyan'): self
-    {
-        $this->addLine(Timeline::renderWithIcons($events, $icon, $color));
-
-        return $this;
-    }
-
-    public function timelineWithStatus(ListCollection|array $events, array $statuses = []): self
-    {
-        $this->addLine(Timeline::renderWithStatus($events, $statuses));
-
-        return $this;
-    }
-
-    // ========== INPUT ==========
-
-    public function ask(string $question, ?string $default = null, string $color = 'cyan'): string
-    {
-        return $this->getInput()->ask($question, $default, $color);
-    }
-
-    public function secret(string $question, string $color = 'cyan'): string
-    {
-        return $this->getInput()->secret($question, $color);
-    }
-
-    public function confirm(string $question, bool $default = true, string $color = 'cyan'): bool
-    {
-        return $this->getInput()->confirm($question, $default, $color);
-    }
-
-    public function choice(string $question, array $choices, ?int $default = null, string $color = 'cyan'): string
-    {
-        return $this->getInput()->choice($question, $choices, $default, $color);
-    }
-
-    public function suggest(string $question, array $suggestions, string $color = 'cyan'): string
-    {
-        return $this->getInput()->suggest($question, $suggestions, $color);
-    }
-
-    public function number(string $question, ?int $min = null, ?int $max = null, ?int $default = null, string $color = 'cyan'): int
-    {
-        return $this->getInput()->number($question, $min, $max, $default, $color);
-    }
-
-    public function confirmWithTimeout(string $question, int $timeout = 5, bool $default = true, string $color = 'cyan'): bool
-    {
-        return $this->getInput()->confirmWithTimeout($question, $timeout, $default, $color);
-    }
-
-    public function multiChoice(string $question, array $options, array $selected = [], string $color = 'cyan'): array
-    {
-        return $this->getInput()->multiChoice($question, $options, $selected, $color);
-    }
-
-    // ========== NOTIFICATION ==========
-
-    /**
-     * Affiche une notification
-     *
-     * @example
-     * $console->notify('Build terminé');
-     * $console->notify('Build terminé', 'success');
-     * $console->notify('Build terminé', 'error', '🚀');
-     */
-    public function notify(string $message, string $type = 'info', string $icon = '🔔'): self
-    {
-        $this->addLine(Notification::render($message, $type, $icon));
-
-        return $this;
-    }
-
-    /**
-     * Affiche une notification de succès
-     */
-    public function notifySuccess(string $message): self
-    {
-        $this->addLine(Notification::success($message));
-
-        return $this;
-    }
-
-    /**
-     * Affiche une notification d'erreur
-     */
-    public function notifyError(string $message): self
-    {
-        $this->addLine(Notification::error($message));
-
-        return $this;
-    }
-
-    /**
-     * Affiche une notification d'avertissement
-     */
-    public function notifyWarning(string $message): self
-    {
-        $this->addLine(Notification::warning($message));
-
-        return $this;
-    }
-
-    /**
-     * Affiche une notification d'information
-     */
-    public function notifyInfo(string $message): self
-    {
-        $this->addLine(Notification::info($message));
-
-        return $this;
-    }
-
-    // ========== SOUND ==========
-
-    /**
-     * Joue un son de succès
-     */
-    public function soundSuccess(): self
-    {
-        Sound::success();
-
-        return $this;
-    }
-
-    /**
-     * Joue un son d'erreur
-     */
-    public function soundError(): self
-    {
-        Sound::error();
-
-        return $this;
-    }
-
-    /**
-     * Joue un son d'information
-     */
-    public function soundInfo(): self
-    {
-        Sound::info();
-
-        return $this;
-    }
-
-    /**
-     * Joue un son personnalisé
-     */
-    public function sound(SoundType $type): self
-    {
-        Sound::play($type);
-
-        return $this;
-    }
-
-    /**
-     * Joue un son de manière asynchrone
-     */
-    public function soundAsync(SoundType $type): self
-    {
-        Sound::playAsync($type);
-
-        return $this;
-    }
-
-    // ========== LOGGER ==========
-
-    /**
-     * Log de niveau INFO (bleu)
-     */
-    public function logInfo(string $message): self
-    {
-        $this->addLine(Logger::info($message));
-
-        return $this;
-    }
-
-    /**
-     * Log de niveau SUCCESS (vert)
-     */
-    public function logSuccess(string $message): self
-    {
-        $this->addLine(Logger::success($message));
-
-        return $this;
-    }
-
-    /**
-     * Log de niveau ERROR (rouge)
-     */
-    public function logError(string $message): self
-    {
-        $this->addLine(Logger::error($message));
-
-        return $this;
-    }
-
-    /**
-     * Log de niveau WARNING (jaune)
-     */
-    public function logWarning(string $message): self
-    {
-        $this->addLine(Logger::warning($message));
-
-        return $this;
-    }
-
-    /**
-     * Log de niveau DEBUG (gris)
-     */
-    public function logDebug(string $message): self
-    {
-        $this->addLine(Logger::debug($message));
-
-        return $this;
-    }
-
-    /**
-     * Log de niveau NOTICE (cyan)
-     */
-    public function logNotice(string $message): self
-    {
-        $this->addLine(Logger::notice($message));
-
-        return $this;
-    }
-
-    /**
-     * Log de niveau CRITICAL (magenta)
-     */
-    public function logCritical(string $message): self
-    {
-        $this->addLine(Logger::critical($message));
-
-        return $this;
-    }
-
-    /**
-     * Log personnalisé
-     */
-    public function log(string $level, string $message, string $color = 'white'): self
-    {
-        $this->addLine(Logger::log($level, $message, $color));
-
-        return $this;
-    }
-
-    // ========== BUFFER ==========
 
     public function startBuffer(): self
     {

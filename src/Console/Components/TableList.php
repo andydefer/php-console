@@ -4,10 +4,9 @@ declare(strict_types=1);
 
 namespace AndyDefer\ConsoleWriter\Console\Components;
 
-use AndyDefer\ConsoleWriter\Console\Services\AnsiConverterService;
+use AndyDefer\ConsoleWriter\Console\Abstracts\Component;
 use AndyDefer\ConsoleWriter\Console\Services\VirtualTerminalService;
 use AndyDefer\ConsoleWriter\Console\ValueObjects\CleanedTextVO;
-use AndyDefer\ConsoleWriter\Contracts\Services\AnsiConverterInterface;
 use AndyDefer\DomainStructures\Utils\ListCollection;
 use AndyDefer\PhpVo\ValueObjects\Types\FloatVO;
 use AndyDefer\PhpVo\ValueObjects\Types\StringVO;
@@ -24,7 +23,7 @@ use AndyDefer\PhpVo\ValueObjects\Types\StringVO;
  *     ])
  * )
  */
-final class TableList
+final class TableList extends Component
 {
     private const INDENT = '  ';
 
@@ -36,23 +35,11 @@ final class TableList
 
     private const BORDER_CHAR = '─';
 
-    private static ?AnsiConverterInterface $ansi = null;
-
-    private static function getAnsi(): AnsiConverterInterface
-    {
-        if (self::$ansi === null) {
-            self::$ansi = new AnsiConverterService;
-        }
-
-        return self::$ansi;
-    }
-
     public static function render(ListCollection $headers, ListCollection $rows): string
     {
         if ($rows->isEmpty()) {
-            return '<fg=yellow>⚠️  No data to display</fg=yellow>';
+            return self::fg('⚠️  No data to display', 'yellow');
         }
-
         // ✅ 1. NETTOYER LES ÉMOJIS AVANT TOUTE OPÉRATION
         $cleanHeaders = self::cleanEmojisFromHeaders($headers);
         $cleanRows = self::cleanEmojisFromRows($rows);
@@ -154,7 +141,7 @@ final class TableList
         string $title
     ): string {
         if ($rows->isEmpty()) {
-            return '<fg=yellow>⚠️  No data to display</fg=yellow>';
+            return self::fg('⚠️  No data to display', 'yellow');
         }
 
         // ✅ Nettoyer les émojis
@@ -304,12 +291,12 @@ final class TableList
 
     private static function topBorder(): string
     {
-        return '<fg=cyan><options=bold>┌──────────────────────────────────────────────────┐</options=bold></fg=cyan>';
+        return self::fg(self::bold('┌──────────────────────────────────────────────────┐'), 'cyan');
     }
 
     private static function bottomBorder(): string
     {
-        return '<fg=cyan><options=bold>└──────────────────────────────────────────────────┘</options=bold></fg=cyan>';
+        return self::fg(self::bold('└──────────────────────────────────────────────────┘'), 'cyan');
     }
 
     /**
@@ -319,7 +306,7 @@ final class TableList
     {
         $line = str_repeat(self::BORDER_CHAR, $width);
 
-        return '<fg=cyan><options=bold>┌'.$line.'┐</options=bold></fg=cyan>';
+        return self::fg(self::bold('┌'.$line.'┐'), 'cyan');
     }
 
     /**
@@ -329,11 +316,10 @@ final class TableList
     {
         $line = str_repeat(self::BORDER_CHAR, $width);
 
-        return '<fg=cyan><options=bold>└'.$line.'┘</options=bold></fg=cyan>';
+        return self::fg(self::bold('└'.$line.'┘'), 'cyan');
     }
 
     // ========== LIGNES DE CONTENU ==========
-
     private static function formatLine(StringVO $key, StringVO $value, int $keyWidth): string
     {
         $keyText = $key->getValue();
@@ -341,18 +327,18 @@ final class TableList
 
         $paddedKey = str_pad($keyText, $keyWidth, ' ', STR_PAD_RIGHT);
 
-        return self::INDENT.'<fg=cyan>'.$paddedKey.'</fg>'.self::SEPARATOR.$valueText;
+        return self::INDENT.self::fg($paddedKey, 'cyan').self::SEPARATOR.$valueText;
     }
 
     private static function infoHeader(array $headers): string
     {
         $count = count($headers);
 
-        return '<fg=yellow>📋 '.$count.' colonnes → affichage en liste</fg=yellow>';
+        return self::fg('📋 '.$count.' colonnes → affichage en liste', 'yellow');
     }
 
     private static function titleLine(string $title): string
     {
-        return '<fg=cyan><options=bold>📋 '.$title.'</options=bold></fg=cyan>';
+        return self::fg(self::bold('📋 '.$title), 'cyan');
     }
 }

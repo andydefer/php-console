@@ -5,9 +5,8 @@ declare(strict_types=1);
 namespace AndyDefer\ConsoleWriter\Tests\Unit\Components;
 
 use AndyDefer\ConsoleWriter\Console\Components\JsonViewer;
-use PHPUnit\Framework\TestCase;
 
-final class JsonViewerTest extends TestCase
+final class JsonViewerTest extends ComponentTestCase
 {
     private array $testData;
 

@@ -4,26 +4,19 @@ declare(strict_types=1);
 
 namespace AndyDefer\ConsoleWriter\Console\Components\Input;
 
-use AndyDefer\ConsoleWriter\Console\Contracts\InputReaderInterface;
+use AndyDefer\ConsoleWriter\Console\Abstracts\InteractiveComponent;
 use AndyDefer\ConsoleWriter\Console\Enums\FgColor;
 use AndyDefer\ConsoleWriter\Console\Enums\Options;
 use AndyDefer\ConsoleWriter\Console\Services\VirtualTerminalService;
-use AndyDefer\ConsoleWriter\Contracts\Services\AnsiConverterInterface;
 
-final class MultiChoice
+final class MultiChoice extends InteractiveComponent
 {
-    private static ?string $oldStty = null;
-
-    private static ?VirtualTerminalService $vt = null;
-
     private static array $state = [];
 
     /**
      * ✅ Signature originale conservée
      */
     public static function execute(
-        AnsiConverterInterface $ansi,
-        InputReaderInterface $reader,
         string $question,
         array $options,
         array $selected = [],
@@ -40,8 +33,8 @@ final class MultiChoice
             'currentIndex' => $currentIndex,
             'color' => $color,
             'fg' => $fg,
-            'ansi' => $ansi,
-            'reader' => $reader,
+            'ansi' => self::getAnsi(),
+            'reader' => self::getReader(),
         ];
 
         // ✅ Initialiser le VirtualTerminalService
@@ -147,35 +140,5 @@ final class MultiChoice
         $reader = self::$state['reader'];
 
         return $reader->readKey();
-    }
-
-    private static function setupTerminal(): void
-    {
-        self::$oldStty = shell_exec('stty -g');
-        shell_exec('stty -icanon -echo min 1 time 0');
-    }
-
-    private static function restoreTerminal(): void
-    {
-        if (self::$oldStty !== null) {
-            shell_exec('stty '.self::$oldStty);
-            self::$oldStty = null;
-        }
-    }
-
-    private static function getFgColor(string $color): FgColor
-    {
-        return match ($color) {
-            'black' => FgColor::BLACK,
-            'red' => FgColor::RED,
-            'green' => FgColor::GREEN,
-            'yellow' => FgColor::YELLOW,
-            'blue' => FgColor::BLUE,
-            'magenta' => FgColor::MAGENTA,
-            'cyan' => FgColor::CYAN,
-            'white' => FgColor::WHITE,
-            'gray' => FgColor::GRAY,
-            default => FgColor::CYAN,
-        };
     }
 }

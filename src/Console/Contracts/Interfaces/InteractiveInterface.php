@@ -27,7 +27,7 @@ interface InteractiveInterface
     public function confirm(string $question, bool $default = true, string $color = 'cyan'): bool;
 
     /**
-     * Demande un choix parmi une liste
+     * Demande un choix unique
      */
     public function choice(string $question, array $choices, ?int $default = null, string $color = 'cyan'): string;
 
@@ -42,7 +42,7 @@ interface InteractiveInterface
     public function number(string $question, ?int $min = null, ?int $max = null, ?int $default = null, string $color = 'cyan'): int;
 
     /**
-     * Demande une confirmation avec délai (timeout)
+     * Demande une confirmation avec timeout
      */
     public function confirmWithTimeout(string $question, int $timeout = 5, bool $default = true, string $color = 'cyan'): bool;
 
@@ -53,12 +53,6 @@ interface InteractiveInterface
 
     /**
      * Crée un formulaire interactif
-     *
-     * @example
-     * $answers = $console->form()
-     *     ->ask('Nom :', 'name')
-     *     ->ask('Email :', 'email')
-     *     ->submit();
      */
     public function form(): Form;
 }

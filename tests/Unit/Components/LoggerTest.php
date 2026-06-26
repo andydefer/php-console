@@ -5,9 +5,8 @@ declare(strict_types=1);
 namespace AndyDefer\ConsoleWriter\Tests\Unit\Components;
 
 use AndyDefer\ConsoleWriter\Console\Components\Logger;
-use PHPUnit\Framework\TestCase;
 
-final class LoggerTest extends TestCase
+final class LoggerTest extends ComponentTestCase
 {
     public function test_info_log(): void
     {

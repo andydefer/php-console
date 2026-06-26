@@ -12,11 +12,7 @@ use AndyDefer\ConsoleWriter\Console\Contracts\Interfaces\StyledComponentsInterfa
 use AndyDefer\ConsoleWriter\Console\Contracts\Interfaces\SystemInterface;
 
 /**
- * Interface principale de la console
- * Étend toutes les sous-interfaces pour une API complète
- *
- * @example
- * $console = new Console();
- * $console->title('Dashboard')->info('Loading...')->render();
+ * Interface principale de la Console
+ * Combine toutes les interfaces de composants
  */
 interface ConsoleInterface extends BufferInterface, InteractiveInterface, ProgressInterface, RenderableInterface, StyledComponentsInterface, SystemInterface {}

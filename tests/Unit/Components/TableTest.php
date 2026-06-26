@@ -5,10 +5,9 @@ declare(strict_types=1);
 namespace AndyDefer\ConsoleWriter\Tests\Unit\Components;
 
 use AndyDefer\ConsoleWriter\Console\Components\Table;
-use AndyDefer\ConsoleWriter\Tests\TestCase;
 use AndyDefer\DomainStructures\Utils\ListCollection;
 
-final class TableTest extends TestCase
+final class TableTest extends ComponentTestCase
 {
     public function test_render_table_with_arrays(): void
     {
@@ -19,18 +18,15 @@ final class TableTest extends TestCase
         ]);
 
         $result = Table::render($headers, $rows);
+        $plainResult = $this->stripAnsi($result);
 
-        $this->assertStringContainsString('Name', $result);
-        $this->assertStringContainsString('Age', $result);
-        $this->assertStringContainsString('City', $result);
-        $this->assertStringContainsString('Alice', $result);
-        $this->assertStringContainsString('Bob', $result);
-        $this->assertStringContainsString('┌', $result);
-        $this->assertStringContainsString('└', $result);
-        $this->assertStringContainsString('<fg=cyan>', $result);
-        $this->assertStringContainsString('</fg=cyan>', $result);
-        $this->assertStringContainsString('<options=bold>', $result);
-        $this->assertStringContainsString('</options=bold>', $result);
+        $this->assertStringContainsString('Name', $plainResult);
+        $this->assertStringContainsString('Age', $plainResult);
+        $this->assertStringContainsString('City', $plainResult);
+        $this->assertStringContainsString('Alice', $plainResult);
+        $this->assertStringContainsString('Bob', $plainResult);
+        $this->assertStringContainsString('┌', $plainResult);
+        $this->assertStringContainsString('└', $plainResult);
     }
 
     public function test_render_empty_table(): void
@@ -39,10 +35,9 @@ final class TableTest extends TestCase
         $rows = ListCollection::from([]);
 
         $result = Table::render($headers, $rows);
+        $plainResult = $this->stripAnsi($result);
 
-        $this->assertStringContainsString('No data to display', $result);
-        $this->assertStringContainsString('<fg=yellow>', $result);
-        $this->assertStringContainsString('</fg=yellow>', $result);
+        $this->assertStringContainsString('No data to display', $plainResult);
     }
 
     public function test_render_table_with_mixed_data_types(): void
@@ -55,16 +50,17 @@ final class TableTest extends TestCase
         ]);
 
         $result = Table::render($headers, $rows);
+        $plainResult = $this->stripAnsi($result);
 
-        $this->assertStringContainsString('ID', $result);
-        $this->assertStringContainsString('Name', $result);
-        $this->assertStringContainsString('Active', $result);
-        $this->assertStringContainsString('1', $result);
-        $this->assertStringContainsString('John Doe', $result);
-        $this->assertStringContainsString('2', $result);
-        $this->assertStringContainsString('Jane Smith', $result);
-        $this->assertStringContainsString('3', $result);
-        $this->assertStringContainsString('Bob Johnson', $result);
+        $this->assertStringContainsString('ID', $plainResult);
+        $this->assertStringContainsString('Name', $plainResult);
+        $this->assertStringContainsString('Active', $plainResult);
+        $this->assertStringContainsString('1', $plainResult);
+        $this->assertStringContainsString('John Doe', $plainResult);
+        $this->assertStringContainsString('2', $plainResult);
+        $this->assertStringContainsString('Jane Smith', $plainResult);
+        $this->assertStringContainsString('3', $plainResult);
+        $this->assertStringContainsString('Bob Johnson', $plainResult);
     }
 
     public function test_render_table_with_different_column_widths(): void
@@ -76,11 +72,12 @@ final class TableTest extends TestCase
         ]);
 
         $result = Table::render($headers, $rows);
+        $plainResult = $this->stripAnsi($result);
 
-        $this->assertStringContainsString('Short', $result);
-        $this->assertStringContainsString('VeryLongHeader', $result);
-        $this->assertStringContainsString('Med', $result);
-        $this->assertStringContainsString('Very long content here', $result);
-        $this->assertStringContainsString('ABCDEFGHIJ', $result);
+        $this->assertStringContainsString('Short', $plainResult);
+        $this->assertStringContainsString('VeryLongHeader', $plainResult);
+        $this->assertStringContainsString('Med', $plainResult);
+        $this->assertStringContainsString('Very long content here', $plainResult);
+        $this->assertStringContainsString('ABCDEFGHIJ', $plainResult);
     }
 }

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace AndyDefer\ConsoleWriter\Console\Contracts\Interfaces;
 
 /**
- * Interface pour la gestion du buffer
+ * Interface pour la gestion du buffer de sortie
  */
 interface BufferInterface
 {
@@ -15,7 +15,7 @@ interface BufferInterface
     public function startBuffer(): self;
 
     /**
-     * Affiche et vide le buffer
+     * Affiche le contenu du buffer
      */
     public function render(): self;
 
@@ -25,7 +25,7 @@ interface BufferInterface
     public function clear(): self;
 
     /**
-     * Récupère les lignes du buffer
+     * Retourne les lignes du buffer
      */
     public function getLines(): array;
 

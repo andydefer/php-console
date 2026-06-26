@@ -4,16 +4,12 @@ declare(strict_types=1);
 
 namespace AndyDefer\ConsoleWriter\Console\Components\Input;
 
-use AndyDefer\ConsoleWriter\Console\Contracts\InputReaderInterface;
-use AndyDefer\ConsoleWriter\Console\Enums\FgColor;
+use AndyDefer\ConsoleWriter\Console\Abstracts\InteractiveComponent;
 use AndyDefer\ConsoleWriter\Console\Enums\Options;
-use AndyDefer\ConsoleWriter\Contracts\Services\AnsiConverterInterface;
 
-final class Number
+final class Number extends InteractiveComponent
 {
     public static function execute(
-        AnsiConverterInterface $ansi,
-        InputReaderInterface $reader,
         string $question,
         ?int $min = null,
         ?int $max = null,
@@ -31,11 +27,11 @@ final class Number
             $rangeText = " (max: {$max})";
         }
 
-        $questionFormatted = $ansi->colorEnum($ansi->option($question.$rangeText, Options::BOLD), $fg);
+        $questionFormatted = self::getAnsi()->colorEnum(self::getAnsi()->option($question.$rangeText, Options::BOLD), $fg);
 
         while (true) {
             echo $questionFormatted.' ';
-            $input = $reader->readLine();
+            $input = self::getReader()->readLine();
 
             if ($input === '' && $default !== null) {
                 return $default;
@@ -63,21 +59,5 @@ final class Number
 
             return $value;
         }
-    }
-
-    private static function getFgColor(string $color): FgColor
-    {
-        return match ($color) {
-            'black' => FgColor::BLACK,
-            'red' => FgColor::RED,
-            'green' => FgColor::GREEN,
-            'yellow' => FgColor::YELLOW,
-            'blue' => FgColor::BLUE,
-            'magenta' => FgColor::MAGENTA,
-            'cyan' => FgColor::CYAN,
-            'white' => FgColor::WHITE,
-            'gray' => FgColor::GRAY,
-            default => FgColor::CYAN,
-        };
     }
 }

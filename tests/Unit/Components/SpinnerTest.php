@@ -5,9 +5,8 @@ declare(strict_types=1);
 namespace AndyDefer\ConsoleWriter\Tests\Unit\Components;
 
 use AndyDefer\ConsoleWriter\Console\Components\Spinner;
-use PHPUnit\Framework\TestCase;
 
-final class SpinnerTest extends TestCase
+final class SpinnerTest extends ComponentTestCase
 {
     protected function setUp(): void
     {

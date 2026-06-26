@@ -4,10 +4,9 @@ declare(strict_types=1);
 
 namespace AndyDefer\ConsoleWriter\Console\Components;
 
+use AndyDefer\ConsoleWriter\Console\Abstracts\Component;
 use AndyDefer\ConsoleWriter\Console\Enums\FgColor;
 use AndyDefer\ConsoleWriter\Console\Enums\Options;
-use AndyDefer\ConsoleWriter\Console\Services\AnsiConverterService;
-use AndyDefer\ConsoleWriter\Contracts\Services\AnsiConverterInterface;
 
 /**
  * Affiche des logs formatés dans la console
@@ -21,20 +20,9 @@ use AndyDefer\ConsoleWriter\Contracts\Services\AnsiConverterInterface;
  * // [14:32:10] INFO  - Build démarré
  * // [14:32:12] ERROR - Redis inaccessible
  */
-final class Logger
+final class Logger extends Component
 {
-    private static ?AnsiConverterInterface $ansi = null;
-
     private static string $timeFormat = 'H:i:s';
-
-    private static function getAnsi(): AnsiConverterInterface
-    {
-        if (self::$ansi === null) {
-            self::$ansi = new AnsiConverterService;
-        }
-
-        return self::$ansi;
-    }
 
     /**
      * Retourne le format de l'heure actuel
@@ -138,21 +126,5 @@ final class Logger
         $messageFormatted = $ansi->colorEnum($message, FgColor::WHITE);
 
         return $timestampFormatted.' '.$levelFormatted.' - '.$messageFormatted;
-    }
-
-    private static function getFgColor(string $color): FgColor
-    {
-        return match ($color) {
-            'black' => FgColor::BLACK,
-            'red' => FgColor::RED,
-            'green' => FgColor::GREEN,
-            'yellow' => FgColor::YELLOW,
-            'blue' => FgColor::BLUE,
-            'magenta' => FgColor::MAGENTA,
-            'cyan' => FgColor::CYAN,
-            'white' => FgColor::WHITE,
-            'gray' => FgColor::GRAY,
-            default => FgColor::WHITE,
-        };
     }
 }

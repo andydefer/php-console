@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace AndyDefer\ConsoleWriter\Console\Contracts\Interfaces;
 
+use AndyDefer\ConsoleWriter\Console\Components\ProgressBar;
+use AndyDefer\ConsoleWriter\Console\Components\Spinner;
+
 /**
- * Interface pour les composants de progression (barre de progression, spinner)
+ * Interface pour les composants de progression (ProgressBar, Spinner)
  */
 interface ProgressInterface
 {
-    // ========== PROGRESS BAR ==========
-
     /**
      * Crée une barre de progression
      */
@@ -27,17 +28,17 @@ interface ProgressInterface
     public function advance(int $steps = 1): self;
 
     /**
-     * Définit la progression à une valeur spécifique
+     * Définit la progression
      */
     public function setProgress(int $current): self;
 
     /**
-     * Change le préfixe de la barre de progression
+     * Définit le préfixe
      */
     public function setPrefix(string $prefix): self;
 
     /**
-     * Change le suffixe de la barre de progression
+     * Définit le suffixe
      */
     public function setSuffix(string $suffix): self;
 
@@ -47,24 +48,22 @@ interface ProgressInterface
     public function finish(): self;
 
     /**
-     * Vérifie si une barre de progression est active
+     * Vérifie si une barre de progression existe
      */
     public function hasProgressBar(): bool;
 
     /**
-     * Récupère la barre de progression active
+     * Récupère la barre de progression
      */
-    public function getProgressBar(): ?object;
-
-    // ========== SPINNER ==========
+    public function getProgressBar(): ?ProgressBar;
 
     /**
-     * Crée un spinner et exécute une tâche
+     * Affiche un spinner avec une tâche
      */
     public function spinner(string $message, callable $task, string $prefix = '', string $suffix = ''): self;
 
     /**
-     * Crée un spinner qui attend une condition
+     * Affiche un spinner en attente
      */
     public function spinnerWait(string $message, callable $isComplete, string $prefix = '', string $suffix = ''): self;
 }

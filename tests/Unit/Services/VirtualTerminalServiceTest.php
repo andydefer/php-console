@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace AndyDefer\ConsoleWriter\Tests\Unit\Services;
 
 use AndyDefer\ConsoleWriter\Console\Services\VirtualTerminalService;
-use PHPUnit\Framework\TestCase;
+use AndyDefer\ConsoleWriter\Tests\Unit\Components\ComponentTestCase;
 
-final class VirtualTerminalServiceTest extends TestCase
+final class VirtualTerminalServiceTest extends ComponentTestCase
 {
     private VirtualTerminalService $vt;
 

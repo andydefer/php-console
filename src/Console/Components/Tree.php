@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace AndyDefer\ConsoleWriter\Console\Components;
 
+use AndyDefer\ConsoleWriter\Console\Abstracts\Component;
 use AndyDefer\DomainStructures\Utils\ListCollection;
 use AndyDefer\DomainStructures\Utils\MapCollection;
 use AndyDefer\DomainStructures\Utils\SetCollection;
 use AndyDefer\PhpVo\ValueObjects\Types\BoolVO;
 
-final class Tree
+final class Tree extends Component
 {
     private const INDENT = '  ';
 
@@ -25,7 +26,7 @@ final class Tree
 
         $hasRootLabel = BoolVO::from($rootLabel !== '');
         if ($hasRootLabel->isTrue()->getValue()) {
-            $lines = $lines->add('<fg=cyan><options=bold>'.$rootLabel.'</options=bold></fg=cyan>');
+            $lines = $lines->add(self::fg(self::bold($rootLabel), 'cyan'));
         }
 
         $lines = $lines->merge(self::renderTree($tree));
@@ -46,7 +47,7 @@ final class Tree
 
         $hasRootLabel = BoolVO::from($rootLabel !== '');
         if ($hasRootLabel->isTrue()->getValue()) {
-            $lines = $lines->add('<fg='.$nodeColor.'><options=bold>'.$rootLabel.'</options=bold></fg='.$nodeColor.'>');
+            $lines = $lines->add(self::fg(self::bold($rootLabel), $nodeColor));
         }
 
         $lines = $lines->merge(self::renderTreeWithColors($tree, $nodeColor, $leafColor));
@@ -59,7 +60,6 @@ final class Tree
 
     public static function renderFromPaths(SetCollection $paths, string $rootLabel = '📁 Project'): string
     {
-        // Construire l'arbre avec un tableau PHP (plus facile pour les références)
         $tree = [];
 
         foreach ($paths as $path) {
@@ -73,7 +73,6 @@ final class Tree
             }
         }
 
-        // Convertir le tableau PHP en MapCollection
         $mapTree = self::arrayToMapCollection($tree);
 
         return self::render($mapTree, $rootLabel);
@@ -89,7 +88,7 @@ final class Tree
 
         $hasRootLabel = BoolVO::from($rootLabel !== '');
         if ($hasRootLabel->isTrue()->getValue()) {
-            $lines = $lines->add('<fg=cyan><options=bold>'.$folderIcon.' '.$rootLabel.'</options=bold></fg=cyan>');
+            $lines = $lines->add(self::fg(self::bold($folderIcon.' '.$rootLabel), 'cyan'));
         }
 
         $lines = $lines->merge(self::renderTreeWithIcons($tree, $folderIcon, $fileIcon));
@@ -139,10 +138,10 @@ final class Tree
 
             if ($isNodeValue) {
                 $lines = $lines->add(
-                    '<fg=white>'.$linePrefix.'</fg=white><fg=cyan><options=bold>'.$key.'</options=bold></fg=cyan>'
+                    self::fg($linePrefix, 'white').self::fg(self::bold($key), 'cyan')
                 );
             } else {
-                $lines = $lines->add('<fg=white>'.$linePrefix.$key.'</fg=white>');
+                $lines = $lines->add(self::fg($linePrefix.$key, 'white'));
             }
 
             if ($isNodeValue) {
@@ -187,10 +186,10 @@ final class Tree
 
             if ($isNodeValue) {
                 $lines = $lines->add(
-                    '<fg=white>'.$linePrefix.'</fg=white><fg='.$nodeColor.'><options=bold>'.$key.'</options=bold></fg='.$nodeColor.'>'
+                    self::fg($linePrefix, 'white').self::fg(self::bold($key), $nodeColor)
                 );
             } else {
-                $lines = $lines->add('<fg='.$leafColor.'>'.$linePrefix.$key.'</fg='.$leafColor.'>');
+                $lines = $lines->add(self::fg($linePrefix.$key, $leafColor));
             }
 
             if ($isNodeValue) {
@@ -236,10 +235,10 @@ final class Tree
 
             if ($isNodeValue) {
                 $lines = $lines->add(
-                    '<fg=white>'.$linePrefix.'</fg=white><fg=cyan><options=bold>'.$icon.' '.$key.'</options=bold></fg=cyan>'
+                    self::fg($linePrefix, 'white').self::fg(self::bold($icon.' '.$key), 'cyan')
                 );
             } else {
-                $lines = $lines->add('<fg=white>'.$linePrefix.$icon.' '.$key.'</fg=white>');
+                $lines = $lines->add(self::fg($linePrefix.$icon.' '.$key, 'white'));
             }
 
             if ($isNodeValue) {

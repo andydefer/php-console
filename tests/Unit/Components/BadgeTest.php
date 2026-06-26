@@ -5,9 +5,8 @@ declare(strict_types=1);
 namespace AndyDefer\ConsoleWriter\Tests\Unit\Components;
 
 use AndyDefer\ConsoleWriter\Console\Components\Badge;
-use PHPUnit\Framework\TestCase;
 
-final class BadgeTest extends TestCase
+final class BadgeTest extends ComponentTestCase
 {
     protected function setUp(): void
     {

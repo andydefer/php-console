@@ -4,10 +4,8 @@ declare(strict_types=1);
 
 namespace AndyDefer\ConsoleWriter\Console\Contracts\Interfaces;
 
-use AndyDefer\ConsoleWriter\Contracts\Services\AnsiConverterInterface;
-
 /**
- * Interface pour les méthodes de rendu de base
+ * Interface pour les composants d'affichage (info, success, error, title, alert)
  */
 interface RenderableInterface
 {
@@ -27,17 +25,57 @@ interface RenderableInterface
     public function error(string $message): self;
 
     /**
-     * Affiche une alerte encadrée (jaune)
-     */
-    public function alert(string $message): self;
-
-    /**
      * Affiche un titre encadré (cyan gras)
      */
     public function title(string $message): self;
 
     /**
-     * Affiche une ligne simple
+     * Affiche une alerte encadrée (jaune)
+     */
+    public function alert(string $message): self;
+
+    /**
+     * Affiche une alerte avec icône personnalisée
+     */
+    public function alertWithIcon(string $message, string $icon, int $padding = 4): self;
+
+    /**
+     * Affiche une alerte avec couleur personnalisée
+     */
+    public function alertWithColor(string $message, string $color, int $padding = 4): self;
+
+    /**
+     * Affiche une alerte avec bordure personnalisée
+     */
+    public function alertWithBorder(string $message, string $borderChar, string $color = 'yellow', int $padding = 4): self;
+
+    /**
+     * Affiche une alerte de succès (✅ vert)
+     */
+    public function alertSuccess(string $message): self;
+
+    /**
+     * Affiche une alerte d'erreur (❌ rouge)
+     */
+    public function alertError(string $message): self;
+
+    /**
+     * Affiche une alerte d'avertissement (⚠️ jaune)
+     */
+    public function alertWarning(string $message): self;
+
+    /**
+     * Affiche une alerte d'information (ℹ️ bleu)
+     */
+    public function alertInfo(string $message): self;
+
+    /**
+     * Ajoute une ligne brute (déjà formatée)
+     */
+    public function raw(string $line): self;
+
+    /**
+     * Ajoute une ligne de texte simple
      */
     public function line(string $message = ''): self;
 
@@ -45,14 +83,4 @@ interface RenderableInterface
      * Ajoute des sauts de ligne
      */
     public function newLine(int $count = 1): self;
-
-    /**
-     * Affiche du texte avec conversion ANSI directe
-     */
-    public function ansi(string $text): self;
-
-    /**
-     * Retourne le service de conversion ANSI
-     */
-    public function getAnsiConverter(): AnsiConverterInterface;
 }

@@ -4,10 +4,9 @@ declare(strict_types=1);
 
 namespace AndyDefer\ConsoleWriter\Console\Components;
 
-use AndyDefer\ConsoleWriter\Console\Services\AnsiConverterService;
+use AndyDefer\ConsoleWriter\Console\Abstracts\Component;
 use AndyDefer\ConsoleWriter\Console\Services\VirtualTerminalService;
 use AndyDefer\ConsoleWriter\Console\ValueObjects\CleanedTextVO;
-use AndyDefer\ConsoleWriter\Contracts\Services\AnsiConverterInterface;
 use AndyDefer\DomainStructures\Utils\ListCollection;
 use AndyDefer\PhpVo\ValueObjects\Types\BoolVO;
 use AndyDefer\PhpVo\ValueObjects\Types\FloatVO;
@@ -17,7 +16,7 @@ use AndyDefer\PhpVo\ValueObjects\Types\StringVO;
  * Tableau avec rendu cellule par cellule
  * Toutes les cellules ont la MÊME largeur (la plus grande cellule + padding)
  */
-final class Table
+final class Table extends Component
 {
     private const PADDING = 2;
 
@@ -27,40 +26,29 @@ final class Table
 
     private const SEPARATOR = ' │ ';
 
-    private static ?AnsiConverterInterface $ansi = null;
-
-    private static function getAnsi(): AnsiConverterInterface
-    {
-        if (self::$ansi === null) {
-            self::$ansi = new AnsiConverterService;
-        }
-
-        return self::$ansi;
-    }
-
     public static function render(ListCollection $headers, ListCollection $rows): string
     {
-
         if ($rows->isEmpty()) {
-            return '<fg=yellow>⚠️  No data to display</fg=yellow>';
+            return self::fg('⚠️  No data to display', 'yellow');
         }
 
         // ✅ 1. NETTOYER LES ÉMOJIS AVANT TOUTE OPÉRATION
         $cleanHeaders = self::cleanEmojisFromHeaders($headers);
         $cleanRows = self::cleanEmojisFromRows($rows);
 
-        $vt = new VirtualTerminalService(self::getAnsi());
+        $vt = self::getVT();
+        $vt->clear();
 
-        $columnCount = $headers->count();
+        $columnCount = $cleanHeaders->count();
 
         // 1. Trouver la cellule la plus large
-        $maxCellWidth = self::findMaxCellWidth($headers, $rows);
+        $maxCellWidth = self::findMaxCellWidth($cleanHeaders, $cleanRows);
 
         // 2. Largeur de cellule = max + padding
         $cellWidthInt = self::getCellWidth($maxCellWidth);
 
         // 3. Toutes les cellules ont la MÊME largeur
-        $columnCount = $headers->count();
+        $columnCount = $cleanHeaders->count();
         $totalWidth = FloatVO::from($cellWidthInt)
             ->multiply(FloatVO::from($columnCount))
             ->add(FloatVO::from($columnCount + 1));
@@ -70,26 +58,26 @@ final class Table
 
         $lineIndex = 0;
 
-        // ✅ Ligne 0: Bordure supérieure (sans coefficient)
+        // ✅ Ligne 0: Bordure supérieure
         $vt->add('line_'.$lineIndex++, self::topBorder($totalWidthInt));
 
         // Ligne 1: En-têtes
         $headerLine = self::BORDER_LEFT;
-        foreach ($headers as $index => $header) {
+        foreach ($cleanHeaders as $index => $header) {
             $padded = self::padCenter(StringVO::from($header), $cellWidthInt);
             $headerLine .= $padded;
-            if ($index < $headers->count() - 1) {
+            if ($index < $cleanHeaders->count() - 1) {
                 $headerLine .= self::SEPARATOR;
             }
         }
         $headerLine .= self::BORDER_RIGHT;
-        $vt->add('line_'.$lineIndex++, '<fg=cyan><options=bold>'.$headerLine.'</options=bold></fg=cyan>');
+        $vt->add('line_'.$lineIndex++, self::fg(self::bold($headerLine), 'cyan'));
 
-        // ✅ Ligne 2: Séparateur (sans coefficient)
+        // ✅ Ligne 2: Séparateur
         $vt->add('line_'.$lineIndex++, self::separator($totalWidthInt));
 
         // Lignes de données
-        foreach ($rows as $rowIndex => $row) {
+        foreach ($cleanRows as $rowIndex => $row) {
             $rowCollection = $row instanceof ListCollection ? $row : ListCollection::from((array) $row);
             $dataLine = self::BORDER_LEFT;
 
@@ -104,7 +92,7 @@ final class Table
             $vt->add('line_'.$lineIndex++, $dataLine);
         }
 
-        // ✅ Dernière ligne: Bordure inférieure (sans coefficient)
+        // ✅ Dernière ligne: Bordure inférieure
         $vt->add('line_'.$lineIndex++, self::bottomBorder($totalWidthInt));
 
         // Rendu
@@ -195,33 +183,33 @@ final class Table
     // ========== BORDURES ==========
 
     /**
-     * ✅ Bordure supérieure - largeur exacte sans coefficient
+     * ✅ Bordure supérieure - largeur exacte
      */
     private static function topBorder(int $totalWidth): string
     {
         $line = str_repeat('─', $totalWidth);
 
-        return '<fg=cyan>┌'.$line.'┐</fg=cyan>';
+        return self::fg('┌'.$line.'┐', 'cyan');
     }
 
     /**
-     * ✅ Bordure inférieure - largeur exacte sans coefficient
+     * ✅ Bordure inférieure - largeur exacte
      */
     private static function bottomBorder(int $totalWidth): string
     {
         $line = str_repeat('─', $totalWidth);
 
-        return '<fg=cyan>└'.$line.'┘</fg=cyan>';
+        return self::fg('└'.$line.'┘', 'cyan');
     }
 
     /**
-     * ✅ Séparateur - largeur exacte sans coefficient
+     * ✅ Séparateur - largeur exacte
      */
     private static function separator(int $totalWidth): string
     {
         $line = str_repeat('─', $totalWidth);
 
-        return '<fg=cyan>├'.$line.'┤</fg=cyan>';
+        return self::fg('├'.$line.'┤', 'cyan');
     }
 
     // ========== PADDING ==========

@@ -4,10 +4,8 @@ declare(strict_types=1);
 
 namespace AndyDefer\ConsoleWriter\Console\Components;
 
-use AndyDefer\ConsoleWriter\Console\Enums\FgColor;
+use AndyDefer\ConsoleWriter\Console\Abstracts\Component;
 use AndyDefer\ConsoleWriter\Console\Enums\Options;
-use AndyDefer\ConsoleWriter\Console\Services\AnsiConverterService;
-use AndyDefer\ConsoleWriter\Contracts\Services\AnsiConverterInterface;
 
 /**
  * Affiche une métrique (KPI) dans la console
@@ -21,19 +19,8 @@ use AndyDefer\ConsoleWriter\Contracts\Services\AnsiConverterInterface;
  * // CPU
  * // 45%
  */
-final class Metric
+final class Metric extends Component
 {
-    private static ?AnsiConverterInterface $ansi = null;
-
-    private static function getAnsi(): AnsiConverterInterface
-    {
-        if (self::$ansi === null) {
-            self::$ansi = new AnsiConverterService;
-        }
-
-        return self::$ansi;
-    }
-
     /**
      * Affiche une métrique simple
      */
@@ -95,24 +82,5 @@ final class Metric
         $valueFormatted = $ansi->colorEnum($value, $fg);
 
         return $labelFormatted.' '.$valueFormatted;
-    }
-
-    /**
-     * Convertit un nom de couleur en FgColor enum
-     */
-    private static function getFgColor(string $color): FgColor
-    {
-        return match ($color) {
-            'black' => FgColor::BLACK,
-            'red' => FgColor::RED,
-            'green' => FgColor::GREEN,
-            'yellow' => FgColor::YELLOW,
-            'blue' => FgColor::BLUE,
-            'magenta' => FgColor::MAGENTA,
-            'cyan' => FgColor::CYAN,
-            'white' => FgColor::WHITE,
-            'gray' => FgColor::GRAY,
-            default => FgColor::WHITE,
-        };
     }
 }

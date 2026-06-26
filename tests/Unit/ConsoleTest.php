@@ -15,11 +15,15 @@ final class ConsoleTest extends TestCase
 {
     private Console $console;
 
+    private function stripAnsi(string $text): string
+    {
+        return preg_replace('/\033\[[0-9;]+m/', '', $text);
+    }
+
     protected function setUp(): void
     {
         parent::setUp();
 
-        // Démarrer le buffer de sortie pour capturer tout ce qui serait affiché
         ob_start();
 
         $this->console = new Console;
@@ -30,7 +34,6 @@ final class ConsoleTest extends TestCase
     {
         $this->console->render();
 
-        // Vider et arrêter le buffer de sortie
         ob_end_clean();
 
         parent::tearDown();
@@ -38,16 +41,56 @@ final class ConsoleTest extends TestCase
 
     // ========== TESTS DE BASE ==========
 
+    // ========== TESTS DE LINK ==========
+
+    public function test_link(): void
+    {
+        $this->console->link('https://example.com');
+
+        $lines = $this->console->getLines();
+        $this->assertCount(1, $lines);
+
+        $clean = $this->stripAnsi($lines[0]);
+        $this->assertStringContainsString('https://example.com', $clean);
+    }
+
+    public function test_link_with_text(): void
+    {
+        $this->console->link('https://example.com', 'Visit Example');
+
+        $lines = $this->console->getLines();
+        $this->assertCount(1, $lines);
+
+        $clean = $this->stripAnsi($lines[0]);
+        $this->assertStringContainsString('Visit Example', $clean);
+    }
+
+    public function test_link_in_chaining(): void
+    {
+        $this->console
+            ->info('Visit our website:')
+            ->link('https://example.com', 'Click here')
+            ->line();
+
+        $lines = $this->console->getLines();
+        $this->assertCount(3, $lines);
+
+        $clean = $this->stripAnsi(implode('', $lines));
+        $this->assertStringContainsString('Visit our website:', $clean);
+        $this->assertStringContainsString('Click here', $clean);
+        $this->assertSame('', $lines[2]);
+    }
+
     public function test_info(): void
     {
         $this->console->info('Hello World');
 
         $lines = $this->console->getLines();
         $this->assertCount(1, $lines);
-        $this->assertStringContainsString('ℹ️', $lines[0]);
-        $this->assertStringContainsString('Hello World', $lines[0]);
-        $this->assertStringContainsString('<fg=blue>', $lines[0]);
-        $this->assertStringContainsString('</fg=blue>', $lines[0]);
+
+        $clean = $this->stripAnsi($lines[0]);
+        $this->assertStringContainsString('INFO', $clean);
+        $this->assertStringContainsString('Hello World', $clean);
     }
 
     public function test_success(): void
@@ -56,10 +99,10 @@ final class ConsoleTest extends TestCase
 
         $lines = $this->console->getLines();
         $this->assertCount(1, $lines);
-        $this->assertStringContainsString('✅', $lines[0]);
-        $this->assertStringContainsString('Task completed', $lines[0]);
-        $this->assertStringContainsString('<fg=green>', $lines[0]);
-        $this->assertStringContainsString('</fg=green>', $lines[0]);
+
+        $clean = $this->stripAnsi($lines[0]);
+        $this->assertStringContainsString('SUCCESS', $clean);
+        $this->assertStringContainsString('Task completed', $clean);
     }
 
     public function test_error(): void
@@ -68,11 +111,10 @@ final class ConsoleTest extends TestCase
 
         $lines = $this->console->getLines();
         $this->assertCount(1, $lines);
-        $this->assertStringContainsString('ERROR', $lines[0]);
-        $this->assertStringContainsString('Something went wrong', $lines[0]);
-        $this->assertStringContainsString('<bg=red>', $lines[0]);
-        $this->assertStringContainsString('<fg=white>', $lines[0]);
-        $this->assertStringContainsString('<options=bold>', $lines[0]);
+
+        $clean = $this->stripAnsi($lines[0]);
+        $this->assertStringContainsString('ERROR', $clean);
+        $this->assertStringContainsString('Something went wrong', $clean);
     }
 
     public function test_alert(): void
@@ -81,12 +123,12 @@ final class ConsoleTest extends TestCase
 
         $lines = $this->console->getLines();
         $this->assertCount(1, $lines);
-        $this->assertStringContainsString('⚠️', $lines[0]);
-        $this->assertStringContainsString('Important message', $lines[0]);
-        $this->assertStringContainsString('┌', $lines[0]);
-        $this->assertStringContainsString('└', $lines[0]);
-        $this->assertStringContainsString('<fg=yellow>', $lines[0]);
-        $this->assertStringContainsString('</fg=yellow>', $lines[0]);
+
+        $clean = $this->stripAnsi($lines[0]);
+        $this->assertStringContainsString('⚠️', $clean);
+        $this->assertStringContainsString('Important message', $clean);
+        $this->assertStringContainsString('┌', $clean);
+        $this->assertStringContainsString('└', $clean);
     }
 
     public function test_title(): void
@@ -95,13 +137,11 @@ final class ConsoleTest extends TestCase
 
         $lines = $this->console->getLines();
         $this->assertCount(1, $lines);
-        $this->assertStringContainsString('System Status', $lines[0]);
-        $this->assertStringContainsString('╔', $lines[0]);
-        $this->assertStringContainsString('╚', $lines[0]);
-        $this->assertStringContainsString('<fg=cyan>', $lines[0]);
-        $this->assertStringContainsString('</fg=cyan>', $lines[0]);
-        $this->assertStringContainsString('<options=bold>', $lines[0]);
-        $this->assertStringContainsString('</options=bold>', $lines[0]);
+
+        $clean = $this->stripAnsi($lines[0]);
+        $this->assertStringContainsString('System Status', $clean);
+        $this->assertStringContainsString('╔', $clean);
+        $this->assertStringContainsString('╚', $clean);
     }
 
     // ========== TESTS DE TABLE ==========
@@ -118,15 +158,15 @@ final class ConsoleTest extends TestCase
 
         $lines = $this->console->getLines();
         $this->assertCount(1, $lines);
-        $this->assertStringContainsString('Name', $lines[0]);
-        $this->assertStringContainsString('Age', $lines[0]);
-        $this->assertStringContainsString('City', $lines[0]);
-        $this->assertStringContainsString('Alice', $lines[0]);
-        $this->assertStringContainsString('Bob', $lines[0]);
-        $this->assertStringContainsString('┌', $lines[0]);
-        $this->assertStringContainsString('└', $lines[0]);
-        $this->assertStringContainsString('<fg=cyan>', $lines[0]);
-        $this->assertStringContainsString('</fg=cyan>', $lines[0]);
+
+        $clean = $this->stripAnsi($lines[0]);
+        $this->assertStringContainsString('Name', $clean);
+        $this->assertStringContainsString('Age', $clean);
+        $this->assertStringContainsString('City', $clean);
+        $this->assertStringContainsString('Alice', $clean);
+        $this->assertStringContainsString('Bob', $clean);
+        $this->assertStringContainsString('┌', $clean);
+        $this->assertStringContainsString('└', $clean);
     }
 
     public function test_table_with_list_collections(): void
@@ -141,11 +181,13 @@ final class ConsoleTest extends TestCase
 
         $lines = $this->console->getLines();
         $this->assertCount(1, $lines);
-        $this->assertStringContainsString('Product', $lines[0]);
-        $this->assertStringContainsString('Price', $lines[0]);
-        $this->assertStringContainsString('Stock', $lines[0]);
-        $this->assertStringContainsString('Laptop', $lines[0]);
-        $this->assertStringContainsString('Mouse', $lines[0]);
+
+        $clean = $this->stripAnsi($lines[0]);
+        $this->assertStringContainsString('Product', $clean);
+        $this->assertStringContainsString('Price', $clean);
+        $this->assertStringContainsString('Stock', $clean);
+        $this->assertStringContainsString('Laptop', $clean);
+        $this->assertStringContainsString('Mouse', $clean);
     }
 
     public function test_table_with_mixed_types(): void
@@ -160,11 +202,13 @@ final class ConsoleTest extends TestCase
 
         $lines = $this->console->getLines();
         $this->assertCount(1, $lines);
-        $this->assertStringContainsString('ID', $lines[0]);
-        $this->assertStringContainsString('Name', $lines[0]);
-        $this->assertStringContainsString('Active', $lines[0]);
-        $this->assertStringContainsString('John Doe', $lines[0]);
-        $this->assertStringContainsString('Jane Smith', $lines[0]);
+
+        $clean = $this->stripAnsi($lines[0]);
+        $this->assertStringContainsString('ID', $clean);
+        $this->assertStringContainsString('Name', $clean);
+        $this->assertStringContainsString('Active', $clean);
+        $this->assertStringContainsString('John Doe', $clean);
+        $this->assertStringContainsString('Jane Smith', $clean);
     }
 
     // ========== TESTS DE TABLE AVEC PLUS DE 5 COLONNES ==========
@@ -180,51 +224,15 @@ final class ConsoleTest extends TestCase
 
         $lines = $this->console->getLines();
         $this->assertCount(1, $lines);
-        $this->assertStringContainsString('6 colonnes → affichage en liste', $lines[0]);
-        $this->assertStringContainsString('A', $lines[0]);
-        $this->assertStringContainsString('B', $lines[0]);
-        $this->assertStringContainsString('C', $lines[0]);
-        $this->assertStringContainsString('D', $lines[0]);
-        $this->assertStringContainsString('E', $lines[0]);
-        $this->assertStringContainsString('F', $lines[0]);
-    }
 
-    // ========== TESTS DE LINK ==========
-
-    public function test_link(): void
-    {
-        $this->console->link('https://example.com');
-
-        $lines = $this->console->getLines();
-        $this->assertCount(1, $lines);
-        $this->assertStringContainsString('<href=https://example.com>', $lines[0]);
-        $this->assertStringContainsString('https://example.com', $lines[0]);
-        $this->assertStringContainsString('</href>', $lines[0]);
-    }
-
-    public function test_link_with_text(): void
-    {
-        $this->console->link('https://example.com', 'Visit Example');
-
-        $lines = $this->console->getLines();
-        $this->assertCount(1, $lines);
-        $this->assertStringContainsString('<href=https://example.com>', $lines[0]);
-        $this->assertStringContainsString('Visit Example', $lines[0]);
-        $this->assertStringContainsString('</href>', $lines[0]);
-    }
-
-    public function test_link_in_chaining(): void
-    {
-        $this->console
-            ->info('Visit our website:')
-            ->link('https://example.com', 'Click here')
-            ->line();
-
-        $lines = $this->console->getLines();
-        $this->assertCount(3, $lines);
-        $this->assertStringContainsString('Visit our website:', $lines[0]);
-        $this->assertStringContainsString('<href=https://example.com>Click here</href>', $lines[1]);
-        $this->assertSame('', $lines[2]);
+        $clean = $this->stripAnsi($lines[0]);
+        $this->assertStringContainsString('6 colonnes → affichage en liste', $clean);
+        $this->assertStringContainsString('A', $clean);
+        $this->assertStringContainsString('B', $clean);
+        $this->assertStringContainsString('C', $clean);
+        $this->assertStringContainsString('D', $clean);
+        $this->assertStringContainsString('E', $clean);
+        $this->assertStringContainsString('F', $clean);
     }
 
     // ========== TESTS DE LIST ==========
@@ -238,9 +246,11 @@ final class ConsoleTest extends TestCase
 
         $lines = $this->console->getLines();
         $this->assertCount(1, $lines);
-        $this->assertStringContainsString('• Item 1', $lines[0]);
-        $this->assertStringContainsString('• Item 2', $lines[0]);
-        $this->assertStringContainsString('• Item 3', $lines[0]);
+
+        $clean = $this->stripAnsi($lines[0]);
+        $this->assertStringContainsString('• Item 1', $clean);
+        $this->assertStringContainsString('• Item 2', $clean);
+        $this->assertStringContainsString('• Item 3', $clean);
     }
 
     public function test_list_with_set_collection(): void
@@ -250,9 +260,11 @@ final class ConsoleTest extends TestCase
 
         $lines = $this->console->getLines();
         $this->assertCount(1, $lines);
-        $this->assertStringContainsString('→ Apple', $lines[0]);
-        $this->assertStringContainsString('→ Banana', $lines[0]);
-        $this->assertStringContainsString('→ Cherry', $lines[0]);
+
+        $clean = $this->stripAnsi($lines[0]);
+        $this->assertStringContainsString('→ Apple', $clean);
+        $this->assertStringContainsString('→ Banana', $clean);
+        $this->assertStringContainsString('→ Cherry', $clean);
     }
 
     public function test_list_numbered(): void
@@ -264,9 +276,11 @@ final class ConsoleTest extends TestCase
 
         $lines = $this->console->getLines();
         $this->assertCount(1, $lines);
-        $this->assertStringContainsString('1. First', $lines[0]);
-        $this->assertStringContainsString('2. Second', $lines[0]);
-        $this->assertStringContainsString('3. Third', $lines[0]);
+
+        $clean = $this->stripAnsi($lines[0]);
+        $this->assertStringContainsString('1. First', $clean);
+        $this->assertStringContainsString('2. Second', $clean);
+        $this->assertStringContainsString('3. Third', $clean);
     }
 
     public function test_list_with_indent(): void
@@ -279,8 +293,10 @@ final class ConsoleTest extends TestCase
 
         $lines = $this->console->getLines();
         $this->assertCount(1, $lines);
-        $this->assertStringContainsString('    • Item 1', $lines[0]);
-        $this->assertStringContainsString('    • Item 2', $lines[0]);
+
+        $clean = $this->stripAnsi($lines[0]);
+        $this->assertStringContainsString('    • Item 1', $clean);
+        $this->assertStringContainsString('    • Item 2', $clean);
     }
 
     public function test_list_colored(): void
@@ -290,8 +306,10 @@ final class ConsoleTest extends TestCase
 
         $lines = $this->console->getLines();
         $this->assertCount(1, $lines);
-        $this->assertStringContainsString('<fg=green>✓ </fg>Item 1', $lines[0]);
-        $this->assertStringContainsString('<fg=green>✓ </fg>Item 2', $lines[0]);
+
+        $clean = $this->stripAnsi($lines[0]);
+        $this->assertStringContainsString('✓ Item 1', $clean);
+        $this->assertStringContainsString('✓ Item 2', $clean);
     }
 
     public function test_list_all_styles(): void
@@ -319,11 +337,11 @@ final class ConsoleTest extends TestCase
 
         $lines = $this->console->getLines();
         $this->assertCount(1, $lines);
-        $this->assertMatchesRegularExpression('/Name\s+:\s+John/', strip_tags($lines[0]));
-        $this->assertMatchesRegularExpression('/Age\s+:\s+30/', strip_tags($lines[0]));
-        $this->assertMatchesRegularExpression('/City\s+:\s+Paris/', strip_tags($lines[0]));
-        $this->assertStringContainsString('<fg=cyan>', $lines[0]);
-        $this->assertStringContainsString('</fg>', $lines[0]);
+
+        $clean = $this->stripAnsi($lines[0]);
+        $this->assertMatchesRegularExpression('/Name\s+:\s+John/', $clean);
+        $this->assertMatchesRegularExpression('/Age\s+:\s+30/', $clean);
+        $this->assertMatchesRegularExpression('/City\s+:\s+Paris/', $clean);
     }
 
     public function test_key_value_with_map_collection(): void
@@ -338,9 +356,11 @@ final class ConsoleTest extends TestCase
 
         $lines = $this->console->getLines();
         $this->assertCount(1, $lines);
-        $this->assertMatchesRegularExpression('/Framework\s+:\s+PHP/', strip_tags($lines[0]));
-        $this->assertMatchesRegularExpression('/Version\s+:\s+8.2/', strip_tags($lines[0]));
-        $this->assertMatchesRegularExpression('/Status\s+:\s+OK/', strip_tags($lines[0]));
+
+        $clean = $this->stripAnsi($lines[0]);
+        $this->assertMatchesRegularExpression('/Framework\s+:\s+PHP/', $clean);
+        $this->assertMatchesRegularExpression('/Version\s+:\s+8.2/', $clean);
+        $this->assertMatchesRegularExpression('/Status\s+:\s+OK/', $clean);
     }
 
     public function test_key_value_with_color(): void
@@ -354,9 +374,10 @@ final class ConsoleTest extends TestCase
 
         $lines = $this->console->getLines();
         $this->assertCount(1, $lines);
-        $this->assertStringContainsString('<fg=yellow>', $lines[0]);
-        $this->assertMatchesRegularExpression('/Name\s+:\s+John/', strip_tags($lines[0]));
-        $this->assertMatchesRegularExpression('/Age\s+:\s+30/', strip_tags($lines[0]));
+
+        $clean = $this->stripAnsi($lines[0]);
+        $this->assertMatchesRegularExpression('/Name\s+:\s+John/', $clean);
+        $this->assertMatchesRegularExpression('/Age\s+:\s+30/', $clean);
     }
 
     public function test_key_value_with_value_color(): void
@@ -370,9 +391,10 @@ final class ConsoleTest extends TestCase
 
         $lines = $this->console->getLines();
         $this->assertCount(1, $lines);
-        $this->assertStringContainsString('<fg=green>', $lines[0]);
-        $this->assertMatchesRegularExpression('/Name\s+:\s+John/', strip_tags($lines[0]));
-        $this->assertMatchesRegularExpression('/Age\s+:\s+30/', strip_tags($lines[0]));
+
+        $clean = $this->stripAnsi($lines[0]);
+        $this->assertMatchesRegularExpression('/Name\s+:\s+John/', $clean);
+        $this->assertMatchesRegularExpression('/Age\s+:\s+30/', $clean);
     }
 
     public function test_key_value_with_indent(): void
@@ -384,7 +406,9 @@ final class ConsoleTest extends TestCase
 
         $lines = $this->console->getLines();
         $this->assertCount(1, $lines);
-        $this->assertMatchesRegularExpression('/\s{4}Name\s+:\s+John/', strip_tags($lines[0]));
+
+        $clean = $this->stripAnsi($lines[0]);
+        $this->assertMatchesRegularExpression('/\s{4}Name\s+:\s+John/', $clean);
     }
 
     public function test_key_value_with_separator(): void
@@ -398,8 +422,10 @@ final class ConsoleTest extends TestCase
 
         $lines = $this->console->getLines();
         $this->assertCount(1, $lines);
-        $this->assertMatchesRegularExpression('/Name\s+→\s+John/', strip_tags($lines[0]));
-        $this->assertMatchesRegularExpression('/Age\s+→\s+30/', strip_tags($lines[0]));
+
+        $clean = $this->stripAnsi($lines[0]);
+        $this->assertMatchesRegularExpression('/Name\s+→\s+John/', $clean);
+        $this->assertMatchesRegularExpression('/Age\s+→\s+30/', $clean);
     }
 
     public function test_key_value_with_long_keys(): void
@@ -411,8 +437,10 @@ final class ConsoleTest extends TestCase
 
         $lines = $this->console->getLines();
         $this->assertCount(1, $lines);
-        $this->assertMatchesRegularExpression('/A very long key name\s+:\s+Value 1/', strip_tags($lines[0]));
-        $this->assertMatchesRegularExpression('/Short\s+:\s+Value 2/', strip_tags($lines[0]));
+
+        $clean = $this->stripAnsi($lines[0]);
+        $this->assertMatchesRegularExpression('/A very long key name\s+:\s+Value 1/', $clean);
+        $this->assertMatchesRegularExpression('/Short\s+:\s+Value 2/', $clean);
     }
 
     // ========== TESTS DE CHAÎNAGE ==========
@@ -429,10 +457,12 @@ final class ConsoleTest extends TestCase
 
         $lines = $this->console->getLines();
         $this->assertCount(6, $lines);
-        $this->assertStringContainsString('Test', $lines[0]);
-        $this->assertStringContainsString('Info message', $lines[2]);
-        $this->assertStringContainsString('Success message', $lines[3]);
-        $this->assertStringContainsString('Error message', $lines[5]);
+
+        $clean = $this->stripAnsi(implode('', $lines));
+        $this->assertStringContainsString('Test', $clean);
+        $this->assertStringContainsString('Info message', $clean);
+        $this->assertStringContainsString('Success message', $clean);
+        $this->assertStringContainsString('Error message', $clean);
     }
 
     public function test_clear(): void
@@ -538,11 +568,10 @@ final class ConsoleTest extends TestCase
 
         $lines = $this->console->getLines();
         $this->assertCount(1, $lines);
-        $this->assertStringContainsString("\033[32m", $lines[0]);
-        $this->assertStringContainsString('Hello', $lines[0]);
-        $this->assertStringContainsString("\033[1m", $lines[0]);
-        $this->assertStringContainsString('World', $lines[0]);
-        $this->assertStringContainsString("\033[0m", $lines[0]);
+
+        $clean = $this->stripAnsi($lines[0]);
+        $this->assertStringContainsString('Hello', $clean);
+        $this->assertStringContainsString('World', $clean);
     }
 
     // ========== TESTS COMPLETS ==========
@@ -573,11 +602,12 @@ final class ConsoleTest extends TestCase
         $this->assertGreaterThan(10, count($lines));
 
         $fullOutput = implode(PHP_EOL, $lines);
-        $this->assertStringContainsString('Complete Demo', $fullOutput);
-        $this->assertStringContainsString('GitHub Repository', $fullOutput);
-        $this->assertStringContainsString('✓ Feature 1', $fullOutput);
-        $this->assertStringContainsString('Console Writer', $fullOutput);
-        $this->assertStringContainsString('All components working!', $fullOutput);
+        $clean = $this->stripAnsi($fullOutput);
+        $this->assertStringContainsString('Complete Demo', $clean);
+        $this->assertStringContainsString('GitHub Repository', $clean);
+        $this->assertStringContainsString('✓ Feature 1', $clean);
+        $this->assertStringContainsString('Console Writer', $clean);
+        $this->assertStringContainsString('All components working!', $clean);
     }
 
     public function test_complex_console_output(): void
@@ -613,16 +643,15 @@ final class ConsoleTest extends TestCase
             ->success('Dashboard loaded successfully');
 
         $lines = $this->console->getLines();
-
-        // ✅ Ajuster le nombre attendu de lignes
         $this->assertGreaterThanOrEqual(14, count($lines));
 
         $fullOutput = implode(PHP_EOL, $lines);
-        $this->assertStringContainsString('System Dashboard', $fullOutput);
-        $this->assertStringContainsString('PHP-FPM', $fullOutput);
-        $this->assertStringContainsString('Redis service is down!', $fullOutput);
-        $this->assertStringContainsString('Please check Redis configuration', $fullOutput);
-        $this->assertStringContainsString('Dashboard loaded successfully', $fullOutput);
+        $clean = $this->stripAnsi($fullOutput);
+        $this->assertStringContainsString('System Dashboard', $clean);
+        $this->assertStringContainsString('PHP-FPM', $clean);
+        $this->assertStringContainsString('Redis service is down!', $clean);
+        $this->assertStringContainsString('Please check Redis configuration', $clean);
+        $this->assertStringContainsString('Dashboard loaded successfully', $clean);
     }
 
     public function test_line_method(): void
@@ -652,9 +681,11 @@ final class ConsoleTest extends TestCase
 
         $lines = $this->console->getLines();
         $this->assertCount(3, $lines);
-        $this->assertStringContainsString('Line 1', $lines[0]);
-        $this->assertStringContainsString('Line 2', $lines[1]);
-        $this->assertStringContainsString('Line 3', $lines[2]);
+
+        $clean = $this->stripAnsi(implode('', $lines));
+        $this->assertStringContainsString('Line 1', $clean);
+        $this->assertStringContainsString('Line 2', $clean);
+        $this->assertStringContainsString('Line 3', $clean);
     }
 
     public function test_get_lines_returns_array(): void

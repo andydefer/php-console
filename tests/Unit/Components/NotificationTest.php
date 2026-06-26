@@ -5,9 +5,8 @@ declare(strict_types=1);
 namespace AndyDefer\ConsoleWriter\Tests\Unit\Components;
 
 use AndyDefer\ConsoleWriter\Console\Components\Notification;
-use PHPUnit\Framework\TestCase;
 
-final class NotificationTest extends TestCase
+final class NotificationTest extends ComponentTestCase
 {
     public function test_render_notification(): void
     {

@@ -4,18 +4,13 @@ declare(strict_types=1);
 
 namespace AndyDefer\ConsoleWriter\Console\Components\Input;
 
-use AndyDefer\ConsoleWriter\Console\Contracts\InputReaderInterface;
+use AndyDefer\ConsoleWriter\Console\Abstracts\InteractiveComponent;
 use AndyDefer\ConsoleWriter\Console\Enums\FgColor;
 use AndyDefer\ConsoleWriter\Console\Enums\Options;
-use AndyDefer\ConsoleWriter\Contracts\Services\AnsiConverterInterface;
 
-final class Suggest
+final class Suggest extends InteractiveComponent
 {
-    private static ?string $oldStty = null;
-
     public static function execute(
-        AnsiConverterInterface $ansi,
-        InputReaderInterface $reader,
         string $question,
         array $suggestions,
         string $color = 'cyan'
@@ -23,7 +18,7 @@ final class Suggest
         $fg = self::getFgColor($color);
 
         // Formate uniquement la question sans la liste entre crochets
-        $questionFormatted = $ansi->colorEnum($ansi->option($question, Options::BOLD), $fg);
+        $questionFormatted = self::getAnsi()->colorEnum(self::getAnsi()->option($question, Options::BOLD), $fg);
 
         $buffer = '';
         self::setupTerminal();
@@ -41,9 +36,9 @@ final class Suggest
                 }
 
                 // Réécrit la question et la saisie sur la même ligne à chaque rafraîchissement
-                echo "\r\033[K".$questionFormatted.' '.$buffer.$ansi->colorEnum($currentSuggestion, FgColor::GRAY);
+                echo "\r\033[K".$questionFormatted.' '.$buffer.self::getAnsi()->colorEnum($currentSuggestion, FgColor::GRAY);
 
-                $key = $reader->readChar();
+                $key = self::getReader()->readChar();
 
                 if ($key === 'ENTER') {
                     if ($currentSuggestion !== '') {
@@ -109,35 +104,5 @@ final class Suggest
         }
 
         return $buffer;
-    }
-
-    private static function setupTerminal(): void
-    {
-        self::$oldStty = shell_exec('stty -g');
-        shell_exec('stty -icanon -echo min 1 time 0');
-    }
-
-    private static function restoreTerminal(): void
-    {
-        if (self::$oldStty !== null) {
-            shell_exec('stty '.self::$oldStty);
-            self::$oldStty = null;
-        }
-    }
-
-    private static function getFgColor(string $color): FgColor
-    {
-        return match ($color) {
-            'black' => FgColor::BLACK,
-            'red' => FgColor::RED,
-            'green' => FgColor::GREEN,
-            'yellow' => FgColor::YELLOW,
-            'blue' => FgColor::BLUE,
-            'magenta' => FgColor::MAGENTA,
-            'cyan' => FgColor::CYAN,
-            'white' => FgColor::WHITE,
-            'gray' => FgColor::GRAY,
-            default => FgColor::CYAN,
-        };
     }
 }

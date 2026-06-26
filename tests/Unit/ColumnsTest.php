@@ -6,9 +6,8 @@ namespace AndyDefer\ConsoleWriter\Tests\Unit\Components;
 
 use AndyDefer\ConsoleWriter\Console\Components\Columns;
 use AndyDefer\DomainStructures\Utils\ListCollection;
-use PHPUnit\Framework\TestCase;
 
-final class ColumnsTest extends TestCase
+final class ColumnsTest extends ComponentTestCase
 {
     public function test_render_columns_with_list_collection(): void
     {
@@ -59,23 +58,6 @@ final class ColumnsTest extends TestCase
         // Vérifier que le texte est centré (espaces avant et après)
         $this->assertMatchesRegularExpression('/\s+A\s+/', $result);
         $this->assertMatchesRegularExpression('/\s+1\s+/', $result);
-    }
-
-    public function test_render_with_icons(): void
-    {
-        $columns = [
-            ['📊 Users', '123'],
-            ['🖥️ Servers', '5'],
-        ];
-
-        $result = Columns::renderWithIcons($columns);
-
-        $this->assertStringContainsString('📊', $result);
-        $this->assertStringContainsString('🖥️', $result);
-        $this->assertStringContainsString('Users', $result);
-        $this->assertStringContainsString('Servers', $result);
-        $this->assertStringContainsString('123', $result);
-        $this->assertStringContainsString('5', $result);
     }
 
     public function test_render_with_colors(): void

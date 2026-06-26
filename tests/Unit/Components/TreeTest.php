@@ -11,6 +11,11 @@ use PHPUnit\Framework\TestCase;
 
 final class TreeTest extends TestCase
 {
+    private function stripAnsi(string $text): string
+    {
+        return preg_replace('/\033\[[0-9;]+m/', '', $text);
+    }
+
     public function test_render_simple_tree(): void
     {
         $tree = MapCollection::from([
@@ -24,7 +29,7 @@ final class TreeTest extends TestCase
         ]);
 
         $result = Tree::render($tree, 'Root');
-        $plainResult = strip_tags($result);
+        $plainResult = $this->stripAnsi($result);
 
         $this->assertStringContainsString('Root', $plainResult);
         $this->assertStringContainsString('└─ root', $plainResult);
@@ -44,7 +49,7 @@ final class TreeTest extends TestCase
         ]);
 
         $result = Tree::render($tree, '');
-        $plainResult = strip_tags($result);
+        $plainResult = $this->stripAnsi($result);
 
         $this->assertStringContainsString('├─ item1', $plainResult);
         $this->assertStringContainsString('└─ item2', $plainResult);
@@ -61,7 +66,7 @@ final class TreeTest extends TestCase
         ]);
 
         $result = Tree::renderFromPaths($paths, 'Project');
-        $plainResult = strip_tags($result);
+        $plainResult = $this->stripAnsi($result);
 
         $this->assertStringContainsString('Project', $plainResult);
         $this->assertStringContainsString('src', $plainResult);
@@ -77,7 +82,7 @@ final class TreeTest extends TestCase
         $paths = SetCollection::from([]);
 
         $result = Tree::renderFromPaths($paths, 'Project');
-        $plainResult = strip_tags($result);
+        $plainResult = $this->stripAnsi($result);
 
         $this->assertStringContainsString('Project', $plainResult);
     }
@@ -92,12 +97,16 @@ final class TreeTest extends TestCase
         ]);
 
         $result = Tree::renderWithColors($tree, 'Root', 'green', 'yellow');
+        $plainResult = $this->stripAnsi($result);
 
-        $this->assertStringContainsString('<fg=green>', $result);
-        $this->assertStringContainsString('<options=bold>Root</options=bold></fg=green>', $result);
-        $this->assertStringContainsString('<fg=yellow>', $result);
-        $this->assertStringContainsString('leaf1', $result);
-        $this->assertStringContainsString('leaf2', $result);
+        $this->assertStringContainsString('Root', $plainResult);
+        $this->assertStringContainsString('node', $plainResult);
+        $this->assertStringContainsString('leaf1', $plainResult);
+        $this->assertStringContainsString('leaf2', $plainResult);
+
+        // Vérifier les codes ANSI
+        $this->assertStringContainsString("\033[32m", $result); // green
+        $this->assertStringContainsString("\033[33m", $result); // yellow
     }
 
     public function test_render_tree_with_colors_default(): void
@@ -110,12 +119,16 @@ final class TreeTest extends TestCase
         ]);
 
         $result = Tree::renderWithColors($tree, 'Root');
+        $plainResult = $this->stripAnsi($result);
 
-        $this->assertStringContainsString('<fg=cyan>', $result);
-        $this->assertStringContainsString('<options=bold>Root</options=bold></fg=cyan>', $result);
-        $this->assertStringContainsString('<fg=white>', $result);
-        $this->assertStringContainsString('leaf1', $result);
-        $this->assertStringContainsString('leaf2', $result);
+        $this->assertStringContainsString('Root', $plainResult);
+        $this->assertStringContainsString('node', $plainResult);
+        $this->assertStringContainsString('leaf1', $plainResult);
+        $this->assertStringContainsString('leaf2', $plainResult);
+
+        // Vérifier les codes ANSI
+        $this->assertStringContainsString("\033[36m", $result); // cyan
+        $this->assertStringContainsString("\033[37m", $result); // white
     }
 
     public function test_render_tree_with_icons(): void
@@ -128,11 +141,12 @@ final class TreeTest extends TestCase
         ]);
 
         $result = Tree::renderWithIcons($tree, 'Root', '📁', '📄');
+        $plainResult = $this->stripAnsi($result);
 
-        $this->assertStringContainsString('📁 Root', $result);
-        $this->assertStringContainsString('📁 folder', $result);
-        $this->assertStringContainsString('📄 file1', $result);
-        $this->assertStringContainsString('📄 file2', $result);
+        $this->assertStringContainsString('📁 Root', $plainResult);
+        $this->assertStringContainsString('📁 folder', $plainResult);
+        $this->assertStringContainsString('📄 file1', $plainResult);
+        $this->assertStringContainsString('📄 file2', $plainResult);
     }
 
     public function test_render_tree_with_icons_default(): void
@@ -145,11 +159,12 @@ final class TreeTest extends TestCase
         ]);
 
         $result = Tree::renderWithIcons($tree, 'Root');
+        $plainResult = $this->stripAnsi($result);
 
-        $this->assertStringContainsString('📁 Root', $result);
-        $this->assertStringContainsString('📁 folder', $result);
-        $this->assertStringContainsString('📄 file1', $result);
-        $this->assertStringContainsString('📄 file2', $result);
+        $this->assertStringContainsString('📁 Root', $plainResult);
+        $this->assertStringContainsString('📁 folder', $plainResult);
+        $this->assertStringContainsString('📄 file1', $plainResult);
+        $this->assertStringContainsString('📄 file2', $plainResult);
     }
 
     public function test_render_empty_tree(): void
@@ -165,7 +180,7 @@ final class TreeTest extends TestCase
         $tree = MapCollection::from([]);
         $result = Tree::render($tree, 'Root');
 
-        $plainResult = strip_tags($result);
+        $plainResult = $this->stripAnsi($result);
         $this->assertStringContainsString('Root', $plainResult);
     }
 
@@ -178,7 +193,7 @@ final class TreeTest extends TestCase
         ]);
 
         $result = Tree::render($tree);
-        $plainResult = strip_tags($result);
+        $plainResult = $this->stripAnsi($result);
 
         $this->assertStringContainsString('├─ item1', $plainResult);
         $this->assertStringContainsString('├─ item2', $plainResult);
@@ -198,7 +213,7 @@ final class TreeTest extends TestCase
         ]);
 
         $result = Tree::render($tree);
-        $plainResult = strip_tags($result);
+        $plainResult = $this->stripAnsi($result);
 
         $this->assertStringContainsString('level1', $plainResult);
         $this->assertStringContainsString('level2', $plainResult);
@@ -234,7 +249,7 @@ final class TreeTest extends TestCase
         ]);
 
         $result = Tree::render($tree, 'php-console-writer');
-        $plainResult = strip_tags($result);
+        $plainResult = $this->stripAnsi($result);
 
         $this->assertStringContainsString('php-console-writer', $plainResult);
         $this->assertStringContainsString('src', $plainResult);
@@ -267,9 +282,8 @@ final class TreeTest extends TestCase
         ]);
 
         $result = Tree::render($tree, '📁 Racine');
-        $plainResult = strip_tags($result);
+        $plainResult = $this->stripAnsi($result);
 
-        // Vérifier que les nœuds sont en cyan gras
         $this->assertStringContainsString('📁 Racine', $plainResult);
         $this->assertStringContainsString('dossier1', $plainResult);
         $this->assertStringContainsString('dossier2', $plainResult);
@@ -292,10 +306,8 @@ final class TreeTest extends TestCase
         ]);
 
         $result = Tree::renderFromPaths($paths, 'Project');
-        $plainResult = strip_tags($result);
+        $plainResult = $this->stripAnsi($result);
 
-        // Les doublons ne doivent pas créer de doublons dans l'arbre
-        // Vérifier que "Components" n'apparaît qu'une fois comme dossier
         $this->assertEquals(1, substr_count($plainResult, 'Components'));
     }
 
@@ -306,7 +318,7 @@ final class TreeTest extends TestCase
         ]);
 
         $result = Tree::renderFromPaths($paths, 'Project');
-        $plainResult = strip_tags($result);
+        $plainResult = $this->stripAnsi($result);
 
         $this->assertStringContainsString('Project', $plainResult);
         $this->assertStringContainsString('src', $plainResult);
@@ -322,7 +334,7 @@ final class TreeTest extends TestCase
         ]);
 
         $result = Tree::renderFromPaths($paths, 'Root');
-        $plainResult = strip_tags($result);
+        $plainResult = $this->stripAnsi($result);
 
         $this->assertStringContainsString('Root', $plainResult);
         $this->assertStringContainsString('a', $plainResult);
@@ -345,9 +357,14 @@ final class TreeTest extends TestCase
         ]);
 
         $result = Tree::render($tree, 'My Root');
+        $plainResult = $this->stripAnsi($result);
 
-        // Vérifier que le root label est en cyan gras
-        $this->assertStringContainsString('<fg=cyan><options=bold>My Root</options=bold></fg=cyan>', $result);
+        $this->assertStringContainsString('My Root', $plainResult);
+        $this->assertStringContainsString('root', $plainResult);
+
+        // Vérifier les codes ANSI
+        $this->assertStringContainsString("\033[36m", $result); // cyan
+        $this->assertStringContainsString("\033[1m", $result); // bold
     }
 
     public function test_tree_node_formatting(): void
@@ -359,12 +376,16 @@ final class TreeTest extends TestCase
         ]);
 
         $result = Tree::render($tree, 'Root');
+        $plainResult = $this->stripAnsi($result);
 
-        // Vérifier que le nœud est en cyan gras
-        $this->assertStringContainsString('<fg=cyan><options=bold>node</options=bold></fg=cyan>', $result);
+        $this->assertStringContainsString('Root', $plainResult);
+        $this->assertStringContainsString('node', $plainResult);
+        $this->assertStringContainsString('leaf', $plainResult);
 
-        // Vérifier que la feuille est en blanc (avec son préfixe)
-        $this->assertStringContainsString('<fg=white>  └─ leaf</fg=white>', $result);
+        // Vérifier les codes ANSI
+        $this->assertStringContainsString("\033[36m", $result); // cyan
+        $this->assertStringContainsString("\033[1m", $result); // bold
+        $this->assertStringContainsString("\033[37m", $result); // white
     }
 
     public function test_tree_prefix_formatting(): void
@@ -376,10 +397,16 @@ final class TreeTest extends TestCase
         ]);
 
         $result = Tree::render($tree, 'Root');
+        $plainResult = $this->stripAnsi($result);
 
-        // Vérifier que les préfixes sont en blanc
-        $this->assertStringContainsString('<fg=white>└─ </fg=white>', $result);
-        $this->assertStringContainsString('<fg=white>  └─ leaf</fg=white>', $result);
+        $this->assertStringContainsString('Root', $plainResult);
+        $this->assertStringContainsString('node', $plainResult);
+        $this->assertStringContainsString('leaf', $plainResult);
+        $this->assertStringContainsString('└─', $plainResult);
+        $this->assertStringContainsString('  └─ leaf', $plainResult);
+
+        // Vérifier les codes ANSI
+        $this->assertStringContainsString("\033[37m", $result); // white
     }
 
     public function test_tree_with_mixed_nodes_and_leafs(): void
@@ -395,13 +422,14 @@ final class TreeTest extends TestCase
         ]);
 
         $result = Tree::render($tree, 'Root');
-        $plainResult = strip_tags($result);
+        $plainResult = $this->stripAnsi($result);
 
-        // Vérifier l'ordre et la structure
         $this->assertStringContainsString('folder1', $plainResult);
         $this->assertStringContainsString('file1.txt', $plainResult);
         $this->assertStringContainsString('subfolder', $plainResult);
         $this->assertStringContainsString('file2.txt', $plainResult);
         $this->assertStringContainsString('file_root.txt', $plainResult);
+        $this->assertStringContainsString('├─', $plainResult);
+        $this->assertStringContainsString('└─', $plainResult);
     }
 }

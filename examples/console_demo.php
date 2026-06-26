@@ -5,519 +5,137 @@ declare(strict_types=1);
 require_once __DIR__.'/../vendor/autoload.php';
 
 use AndyDefer\ConsoleWriter\Console\Console;
-use AndyDefer\ConsoleWriter\Console\Enums\BgColor;
-use AndyDefer\ConsoleWriter\Console\Enums\FgColor;
 use AndyDefer\ConsoleWriter\Console\Enums\ListStyle;
-use AndyDefer\ConsoleWriter\Console\Enums\Options;
+use AndyDefer\ConsoleWriter\Console\Enums\SoundType;
 use AndyDefer\DomainStructures\Utils\ListCollection;
 use AndyDefer\DomainStructures\Utils\MapCollection;
-use AndyDefer\DomainStructures\Utils\SetCollection;
-
-echo "\n";
-
-// ========================================================================
-// 1. CRÉATION DE LA CONSOLE
-// ========================================================================
 
 $console = new Console;
-$console->title('🚀 Script de déploiement');
+
+$console->title('🎨 Démonstration complète du Console');
+
+// ========================================================================
+// 1. MESSAGES DE BASE
+// ========================================================================
+
 $console->line();
-
-$console->logInfo('Démarrage du déploiement...');
-sleep(1);
-
-$console->logDebug('Vérification des prérequis...');
-sleep(1);
-
-$console->logSuccess('✅ Prérequis vérifiés');
-sleep(1);
-
-$console->logInfo('Téléchargement des sources...');
-sleep(2);
-
-$console->logSuccess('✅ Sources téléchargées (2.4 MB)');
-sleep(1);
-
-$console->logInfo('Installation des dépendances...');
-sleep(2);
-
-$console->logWarning('⚠️ Certaines dépendances sont obsolètes');
-sleep(1);
-
-$console->logSuccess('✅ Déploiement terminé !');
-
-return;
-$console
-    ->notifySuccess('Tâche terminée avec succès !')
-    ->soundSuccess();
+$console->info('1. Messages de base');
 
 $console
-    ->notifyError('Erreur critique !')
-    ->soundError();
+    ->info('ℹ️  Message d\'information')
+    ->success('✅ Message de succès')
+    ->error('❌ Message d\'erreur')
+    ->alert('⚠️  Message d\'alerte')
+    ->title('📊 Titre encadré');
+
+// ========================================================================
+// 2. ALERTES STYLISÉES
+// ========================================================================
+
+$console->line();
+$console->info('2. Alertes stylisées');
 
 $console
-    ->notifyInfo('Nouvelle mise à jour disponible')
-    ->soundInfo();
+    ->alertSuccess('✅ Succès !')
+    ->alertError('❌ Erreur !')
+    ->alertWarning('⚠️  Attention !')
+    ->alertInfo('ℹ️  Information !')
+    ->alertWithIcon('Message avec icône', '📬')
+    ->alertWithColor('Message en rouge', 'red', 6)
+    ->alertWithBorder('Message avec bordure', '=', 'magenta', 8)
+    ->alertWithIconAndColor('🎉 Félicitations !', '🎉', 'green', 6)
+    ->alertFull('Message complet', '🚀', 'cyan', '═', 6);
+
+// ========================================================================
+// 3. TABLEAUX
+// ========================================================================
+
+$console->line();
+$console->info('3. Tableaux');
+
+$headers = ListCollection::from(['Service', 'Status', 'Port', 'Version']);
+$rows = ListCollection::from([
+    ListCollection::from(['PHP-FPM', '✅ Running', '9000', '8.2.15']),
+    ListCollection::from(['MySQL', '✅ Running', '3306', '8.0.35']),
+    ListCollection::from(['Redis', '❌ Failed', '6379', '7.2.4']),
+    ListCollection::from(['Nginx', '✅ Running', '80', '1.24.0']),
+]);
+
+$console->table($headers, $rows);
+
+// ========================================================================
+// 4. TABLEAU ADAPTATIF (> 5 colonnes → liste)
+// ========================================================================
+
+$console->line();
+$console->info('4. Tableau adaptatif (6 colonnes → liste)');
+
+$headers6 = ListCollection::from(['Service', 'Status', 'Port', 'Version', 'Uptime', 'Memory']);
+$rows6 = ListCollection::from([
+    ListCollection::from(['PHP-FPM', '✅ Running', '9000', '8.2.15', '72h', '128 MB']),
+    ListCollection::from(['MySQL', '✅ Running', '3306', '8.0.35', '168h', '512 MB']),
+    ListCollection::from(['Redis', '❌ Failed', '6379', '7.2.4', '0h', '256 MB']),
+    ListCollection::from(['Nginx', '✅ Running', '80', '1.24.0', '720h', '64 MB']),
+]);
+
+$console->adaptiveTable($headers6, $rows6);
+
+// ========================================================================
+// 5. LISTES
+// ========================================================================
+
+$console->line();
+$console->info('5. Listes');
+
+$items = ['Item 1', 'Item 2', 'Item 3'];
 
 $console
-    ->title('📊 Dashboard')
-    ->line()
+    ->list($items, ListStyle::BULLET)
+    ->list($items, ListStyle::ARROW)
+    ->list($items, ListStyle::NUMBER)
+    ->listColored(['✅ Tâche terminée', '✅ Tests passés'], ListStyle::CHECK, 'green')
+    ->listColored(['❌ Échec du build'], ListStyle::CROSS, 'red');
+
+// ========================================================================
+// 6. KEY VALUE
+// ========================================================================
+
+$console->line();
+$console->info('6. Key Value');
+
+$console
     ->keyValue([
-        'CPU' => '45%',
-        'RAM' => '8.2 Go',
-        'DISQUE' => '256 Go',
+        'Nom' => 'Jean Dupont',
+        'Âge' => 42,
+        'Ville' => 'Paris',
     ])
-    ->line()
-    ->notifySuccess('Tous les services sont en ligne')
-    ->notifyInfo('3 nouveaux utilisateurs')
-    ->notifyWarning('Cache à nettoyer')
-    ->line()
-    ->success('✅ Dashboard chargé');
-
-return;
+    ->keyValueWithValueColor([
+        'CPU' => '45%',
+        'RAM' => '8.2 GB',
+        'DISQUE' => '256 GB',
+    ], 'green')
+    ->keyValueWithSeparator([
+        'Utilisateur' => 'admin',
+        'Rôle' => 'Administrateur',
+    ], ' → ');
 
 // ========================================================================
-// 2. DÉMONSTRATION DES COMPOSANTS DE BASE
+// 7. LIENS
 // ========================================================================
+
+$console->line();
+$console->info('7. Liens');
 
 $console
-    ->title('🎨 Console Writer - Démonstration Complète')
-    ->line()
-    ->info('Bienvenue dans la démonstration de tous les composants')
-    ->line();
+    ->link('https://github.com/andydefer/php-console-writer')
+    ->link('https://github.com', '📦 Voir le projet');
 
 // ========================================================================
-// 3. MESSAGES SIMPLES
+// 8. ARBRES (TREE)
 // ========================================================================
 
-$console
-    ->info('1. Message d\'information (bleu)')
-    ->success('2. Message de succès (vert)')
-    ->error('3. Message d\'erreur (rouge avec fond)')
-    ->alert('4. Alerte importante (encadrée jaune)')
-    ->line();
-
-// ========================================================================
-// 4. TITRE
-// ========================================================================
-
-$console
-    ->title('5. Titre encadré')
-    ->line();
-
-// ========================================================================
-// 5. TABLEAU 4 COLONNES
-// ========================================================================
-
-$console
-    ->info('6. Tableau 4 colonnes')
-    ->table(
-        ListCollection::from(['Service', 'Status', 'Port', 'Version']),
-        ListCollection::from([
-            ListCollection::from(['PHP-FPM', '✅ Running', '9000', '8.2.15']),
-            ListCollection::from(['MySQL', '✅ Running', '3306', '8.0.35']),
-            ListCollection::from(['Redis', '❌ Failed', '6379', '7.2.4']),
-            ListCollection::from(['Nginx', '✅ Running', '80', '1.24.0']),
-        ])
-    )
-    ->line();
-
-// ========================================================================
-// 6. TABLEAU 5 COLONNES
-// ========================================================================
-
-$console
-    ->info('7. Tableau 5 colonnes')
-    ->table(
-        ListCollection::from(['Service', 'Status', 'Port', 'Version', 'Uptime']),
-        ListCollection::from([
-            ListCollection::from(['PHP-FPM', '✅ Running', '9000', '8.2.15', '72h']),
-            ListCollection::from(['MySQL', '✅ Running', '3306', '8.0.35', '168h']),
-            ListCollection::from(['Redis', '❌ Failed', '6379', '7.2.4', '0h']),
-            ListCollection::from(['Nginx', '✅ Running', '80', '1.24.0', '720h']),
-        ])
-    )
-    ->line();
-
-// ========================================================================
-// 7. TABLEAU 6 COLONNES
-// ========================================================================
-
-$console
-    ->info('8. Tableau 6 colonnes')
-    ->table(
-        ListCollection::from(['Service', 'Status', 'Port', 'Version', 'Uptime', 'Memory']),
-        ListCollection::from([
-            ListCollection::from(['PHP-FPM', '✅ Running', '9000', '8.2.15', '72h', '128 MB']),
-            ListCollection::from(['MySQL', '✅ Running', '3306', '8.0.35', '168h', '512 MB']),
-            ListCollection::from(['Redis', '❌ Failed', '6379', '7.2.4', '0h', '256 MB']),
-            ListCollection::from(['Nginx', '✅ Running', '80', '1.24.0', '720h', '64 MB']),
-        ])
-    )
-    ->line();
-
-// ========================================================================
-// 8. TABLEAU 7 COLONNES
-// ========================================================================
-
-$console
-    ->info('9. Tableau 7 colonnes')
-    ->table(
-        ListCollection::from(['Service', 'Status', 'Port', 'Version', 'Uptime', 'Memory', 'CPU']),
-        ListCollection::from([
-            ListCollection::from(['PHP-FPM', '✅ Running', '9000', '8.2.15', '72h', '128 MB', '5%']),
-            ListCollection::from(['MySQL', '✅ Running', '3306', '8.0.35', '168h', '512 MB', '15%']),
-            ListCollection::from(['Redis', '❌ Failed', '6379', '7.2.4', '0h', '256 MB', '0%']),
-            ListCollection::from(['Nginx', '✅ Running', '80', '1.24.0', '720h', '64 MB', '2%']),
-        ])
-    )
-    ->line();
-
-// ========================================================================
-// 9. TABLEAU AVEC LIST COLLECTION (3 colonnes)
-// ========================================================================
-
-$console
-    ->info('10. Tableau avec ListCollection (3 colonnes)')
-    ->table(
-        ListCollection::from(['Product', 'Price', 'Stock']),
-        ListCollection::from([
-            ListCollection::from(['Laptop', '999.99', '15']),
-            ListCollection::from(['Mouse', '29.99', '42']),
-            ListCollection::from(['Keyboard', '79.99', '28']),
-        ])
-    )
-    ->line();
-
-// ========================================================================
-// 10. TABLEAU AVEC ÉMOJIS (3 colonnes)
-// ========================================================================
-
-$console
-    ->info('11. Tableau avec émojis (3 colonnes)')
-    ->table(
-        ListCollection::from(['✅ Status', '📊 Data', '📈 Trend']),
-        ListCollection::from([
-            ListCollection::from(['✅ OK', '📈 100%', '↑ 12%']),
-            ListCollection::from(['❌ KO', '📉 50%', '↓ 8%']),
-            ListCollection::from(['⚠️ WARN', '📊 75%', '→ 0%']),
-        ])
-    )
-    ->line();
-
-// ========================================================================
-// 11. LIEN
-// ========================================================================
-
-$console
-    ->info('12. Lien cliquable')
-    ->link('https://github.com/andydefer/php-console-writer', '📦 Voir le projet sur GitHub')
-    ->line();
-
-// ========================================================================
-// 12. LISTE À PUCES
-// ========================================================================
-
-$console
-    ->info('13. Liste à puces')
-    ->list(
-        ['Authentification JWT', 'Validation des données', 'Logging avancé', 'Cache Redis'],
-        ListStyle::CHECK
-    )
-    ->line();
-
-// ========================================================================
-// 13. LISTE NUMÉROTÉE
-// ========================================================================
-
-$console
-    ->info('14. Liste numérotée')
-    ->list(
-        ['Installer les dépendances', 'Configurer l\'environnement', 'Lancer les migrations', 'Démarrer le serveur'],
-        ListStyle::NUMBER
-    )
-    ->line();
-
-// ========================================================================
-// 14. LISTE AVEC FLÈCHE
-// ========================================================================
-
-$console
-    ->info('15. Liste avec flèches')
-    ->list(
-        ['Étape 1 : Analyse', 'Étape 2 : Conception', 'Étape 3 : Développement', 'Étape 4 : Test'],
-        ListStyle::ARROW
-    )
-    ->line();
-
-// ========================================================================
-// 15. LISTE COLORÉE
-// ========================================================================
-
-$console
-    ->info('16. Liste colorée')
-    ->listColored(
-        ['✅ Tâche terminée', '✅ Tests passés', '✅ Déploiement réussi'],
-        ListStyle::CHECK,
-        'green'
-    )
-    ->listColored(
-        ['❌ Échec du build', '❌ Erreur de compilation', '❌ Test échoué'],
-        ListStyle::CROSS,
-        'red'
-    )
-    ->line();
-
-// ========================================================================
-// 16. KEY VALUE (Clés => Valeurs)
-// ========================================================================
-
-$console
-    ->info('17. Clés => Valeurs')
-    ->keyValue(
-        MapCollection::from([
-            'Nom' => 'Jean Dupont',
-            'Âge' => 42,
-            'Ville' => 'Paris 🇫🇷',
-            'Email' => 'jean@example.com',
-            'Status' => '✅ Actif',
-        ])
-    )
-    ->line();
-
-// ========================================================================
-// 17. KEY VALUE AVEC COULEUR
-// ========================================================================
-
-$console
-    ->info('18. Clés => Valeurs avec couleur jaune')
-    ->keyValueWithColor(
-        MapCollection::from([
-            'CPU' => '45%',
-            'RAM' => '8.2 Go',
-            'DISQUE' => '256 Go',
-            'RÉSEAU' => '1.2 Gbps',
-            'UPTIME' => '72h 34m',
-        ]),
-        'yellow'
-    )
-    ->line();
-
-// ========================================================================
-// 18. KEY VALUE AVEC VALEURS COLORÉES
-// ========================================================================
-
-$console
-    ->info('19. Clés => Valeurs avec valeurs vertes')
-    ->keyValueWithValueColor(
-        MapCollection::from([
-            'Service' => 'PHP-FPM',
-            'Status' => '✅ Running',
-            'Port' => '9000',
-            'Memory' => '128 MB',
-        ]),
-        'green'
-    )
-    ->line();
-
-// ========================================================================
-// 19. KEY VALUE AVEC SÉPARATEUR PERSONNALISÉ
-// ========================================================================
-
-$console
-    ->info('20. Clés => Valeurs avec séparateur →')
-    ->keyValueWithSeparator(
-        MapCollection::from([
-            'Utilisateur' => 'admin',
-            'Rôle' => 'Administrateur',
-            'Dernière connexion' => '2026-06-25 14:30:00',
-            'IP' => '192.168.1.100',
-        ]),
-        ' → '
-    )
-    ->line();
-
-// ========================================================================
-// 20. KEY VALUE AVEC DONNÉES MIXTES
-// ========================================================================
-
-$console
-    ->info('21. Clés => Valeurs avec types mixtes')
-    ->keyValue(
-        MapCollection::from([
-            'String' => 'Hello World',
-            'Integer' => 42,
-            'Boolean' => true,
-            'Null' => null,
-            'Float' => 3.14159,
-            'Array' => ['a', 'b', 'c'],
-            'Object' => new class
-            {
-                public function __toString(): string
-                {
-                    return 'Custom object';
-                }
-            },
-        ])
-    )
-    ->line();
-
-// ========================================================================
-// 21. KEY VALUE AVEC LONGUES CLÉS
-// ========================================================================
-
-$console
-    ->info('22. Clés => Valeurs avec longues clés')
-    ->keyValue(
-        MapCollection::from([
-            'Nom d\'utilisateur' => 'jdupont',
-            'Dernière connexion' => '2026-06-25 14:30:00',
-            'Adresse IP' => '192.168.1.100',
-            'Permissions' => 'Administrateur',
-            'Dossier personnel' => '/home/jdupont',
-            'Date de création' => '2024-01-15',
-        ])
-    )
-    ->line();
-
-// ========================================================================
-// 22. LIGNES PERSONNALISÉES
-// ========================================================================
-
-$console
-    ->info('23. Lignes personnalisées')
-    ->line('─────────────────────────────────────────────────')
-    ->line('  Ceci est une ligne personnalisée sans style')
-    ->line('  Avec des '.'<fg=yellow>couleurs</fg=yellow> '.'<fg=green>intégrées</fg=green>')
-    ->line('─────────────────────────────────────────────────')
-    ->line();
-
-// ========================================================================
-// 23. UTILISATION AVANCÉE DU SERVICE ANSI
-// ========================================================================
-
-$console
-    ->info('24. Utilisation avancée du service ANSI')
-    ->line();
-
-$ansi = $console->getAnsiConverter();
-
-echo $ansi->color('▶  Texte en rouge', 'red')."\n";
-echo $ansi->color('▶  Texte en vert', 'green')."\n";
-echo $ansi->color('▶  Texte en gras', 'bold')."\n";
-echo $ansi->color('▶  Texte en cyan', 'cyan')."\n";
-
-echo $ansi->bgColor('▶  Fond rouge', 'red')."\n";
-echo $ansi->bgColor('▶  Fond vert', 'green')."\n";
-echo $ansi->bgColor('▶  Fond jaune', 'yellow')."\n";
-
-echo $ansi->style(
-    '▶  Texte vert gras souligné',
-    FgColor::GREEN,
-    null,
-    Options::BOLD,
-    Options::UNDERLINE
-)."\n";
-
-echo $ansi->style(
-    '▶  Texte blanc sur fond bleu en gras',
-    FgColor::WHITE,
-    BgColor::BLUE,
-    Options::BOLD
-)."\n";
-
-echo $ansi->style(
-    '▶  Texte jaune sur fond noir en italique',
-    FgColor::YELLOW,
-    BgColor::BLACK,
-    Options::ITALIC
-)."\n";
-
-echo $ansi->convert('<fg=cyan><options=bold>▶  Balises Symfony converties en ANSI</options=bold></fg=cyan>')."\n";
-echo "\n";
-
-// ========================================================================
-// 24. TABLEAU 8 COLONNES (cas extrême)
-// ========================================================================
-
-$console
-    ->info('25. Tableau 8 colonnes (cas extrême)')
-    ->adaptiveTable(
-        ListCollection::from(['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']),
-        ListCollection::from([
-            ListCollection::from(['1', '2', '3', '4', '5', '6', '7', '8']),
-            ListCollection::from(['9', '10', '11', '12', '13', '14', '15', '16']),
-            ListCollection::from(['17', '18', '19', '20', '21', '22', '23', '24']),
-        ])
-    )
-    ->line();
-
-// ========================================================================
-// 25. TABLEAU AVEC TEXTE TRÈS LONG
-// ========================================================================
-
-$console
-    ->info('26. Tableau avec texte très long (6 colonnes)')
-    ->adaptiveTable(
-        ListCollection::from(['ID', 'Name', 'Description', 'Category', 'Price', 'Stock']),
-        ListCollection::from([
-            ListCollection::from(['1', 'Laptop Pro', 'High-performance laptop with 16GB RAM and 512GB SSD', 'Electronics', '1299.99', '25']),
-            ListCollection::from(['2', 'Wireless Mouse', 'Ergonomic wireless mouse with Bluetooth 5.0', 'Accessories', '29.99', '100']),
-            ListCollection::from(['3', 'USB-C Hub', '7-in-1 USB-C hub with HDMI, Ethernet and USB 3.0', 'Accessories', '49.99', '50']),
-        ])
-    )
-    ->line();
-
-// ========================================================================
-// 26. DASHBOARD COMPLET
-// ========================================================================
-
-$console
-    ->title('📊 Dashboard Système')
-    ->line()
-    ->keyValueWithValueColor(
-        MapCollection::from([
-            'Serveur' => 'Production - Web01',
-            'PHP' => '8.2.15',
-            'MySQL' => '8.0.35',
-            'Redis' => '7.2.4',
-            'Nginx' => '1.24.0',
-            'Uptime' => '72h 34m 12s',
-            'Charge CPU' => '45%',
-            'Mémoire' => '8.2 / 16.0 Go',
-            'Disque' => '256 / 512 Go',
-            'Requêtes/s' => '1 234',
-        ]),
-        'green'
-    )
-    ->line()
-    ->table(
-        ['Endpoint', 'Méthode', 'Status', 'Temps'],
-        [
-            ['/api/users', 'GET', '✅ 200', '45ms'],
-            ['/api/posts', 'POST', '✅ 201', '78ms'],
-            ['/api/comments', 'GET', '❌ 500', '120ms'],
-            ['/api/auth', 'POST', '✅ 200', '32ms'],
-        ]
-    )
-    ->line()
-    ->listColored(
-        ['Services en ligne : PHP-FPM, MySQL, Nginx'],
-        ListStyle::CHECK,
-        'green'
-    )
-    ->listColored(
-        ['Services hors ligne : Redis'],
-        ListStyle::CROSS,
-        'red'
-    )
-    ->line()
-    ->alert('⚠️  Redis est hors ligne. Vérifiez la configuration.')
-    ->line()
-    ->success('✅ Dashboard chargé avec succès !')
-    ->line()
-    ->info('Fin de la démonstration')
-    ->render();
+$console->line();
+$console->info('8. Arbres');
 
 $tree = MapCollection::from([
     'src' => MapCollection::from([
@@ -526,133 +144,196 @@ $tree = MapCollection::from([
                 'Table.php' => MapCollection::from([]),
                 'Tree.php' => MapCollection::from([]),
             ]),
-            'Services' => MapCollection::from([
-                'AnsiConverterService.php' => MapCollection::from([]),
-            ]),
-        ]),
-        'Contracts' => MapCollection::from([
-            'Renderable.php' => MapCollection::from([]),
-        ]),
-    ]),
-    'tests' => MapCollection::from([
-        'Unit' => MapCollection::from([
-            'Components' => MapCollection::from([
-                'TreeTest.php' => MapCollection::from([]),
-            ]),
         ]),
     ]),
 ]);
 
 $console
-    ->title('📁 Structure du projet')
-    ->line()
-    ->tree($tree, '📦 php-console-writer')
-    ->line()
-    ->treeWithColors($tree, '📦 php-console-writer', 'cyan', 'white')
-    ->line()
-    ->treeWithIcons($tree, '📦 php-console-writer', '📂', '📄')
-    ->render();
+    ->tree($tree, '📦 Projet')
+    ->treeWithIcons($tree, '📦 Projet', '📂', '📄');
 
-// 2. Arbre à partir de chemins
-$paths = SetCollection::from([
-    'src/Console/Components',
-    'src/Console/Services',
-    'src/Console/Enums',
-    'tests/Unit/Components',
-    'tests/Unit/Services',
-    'README.md',
-    'LICENSE',
-    'composer.json',
+// ========================================================================
+// 9. BADGES
+// ========================================================================
+
+$console->line();
+$console->info('9. Badges');
+
+$console
+    ->badgeSuccess('OK')
+    ->badgeDanger('KO')
+    ->badgeWarning('WARN')
+    ->badgeInfo('INFO')
+    ->badgePrimary('PRIMARY');
+
+// ========================================================================
+// 10. MÉTRIQUES
+// ========================================================================
+
+$console->line();
+$console->info('10. Métriques');
+
+$console
+    ->metric('CPU', '45%', 'yellow')
+    ->metricWithIcon('RAM', '8.2 GB', '💾', 'green')
+    ->metricWithTrend('REQUÊTES', '1 234', '↑ 5%', 'green')
+    ->metricInline('UPTIME', '72h', 'cyan');
+
+// ========================================================================
+// 11. COLONNES
+// ========================================================================
+
+$console->line();
+$console->info('11. Colonnes');
+
+$columns = [
+    ['Users', '123', 'Actif'],
+    ['Servers', '5', 'En ligne'],
+    ['Logs', '42', 'OK'],
+];
+
+$console
+    ->columns($columns)
+    ->columnsWithColors($columns, ['cyan', 'green', 'yellow']);
+
+// ========================================================================
+// 12. TIMELINE
+// ========================================================================
+
+$console->line();
+$console->info('12. Timeline');
+
+$events = ListCollection::from([
+    ListCollection::from(['12:00', 'Application démarrée', 'Service web initialisé']),
+    ListCollection::from(['12:01', 'Connexion DB', 'Connexion établie']),
+    ListCollection::from(['12:02', 'Serveur prêt', 'En attente des requêtes']),
 ]);
 
 $console
-    ->title('📊 Dashboard Système')
-    ->line()
-    ->metricWithIcon('CPU', '45%', '🖥️', 'yellow')
-    ->line()
-    ->metricWithIcon('RAM', '8.2 / 16.0 GB', '💾', 'green')
-    ->metricWithIcon('DISQUE', '256 / 512 GB', '💿', 'cyan')
-    ->metricWithIcon('RÉSEAU', '1.2 Gbps', '🌐', 'blue')
-    ->line()
-    ->table(
-        ['Service', 'Status', 'Uptime'],
-        [
-            ['PHP-FPM', '✅ Running', '72h'],
-            ['MySQL', '✅ Running', '168h'],
-            ['Redis', '❌ Failed', '0h'],
-            ['Nginx', '✅ Running', '720h'],
-        ]
-    )
-    ->line()
-    ->success('✅ Dashboard chargé avec succès !')
-    ->render();
+    ->timeline($events)
+    ->timelineWithStatus($events, ['success', 'warning', 'error']);
+
+// ========================================================================
+// 13. JSON VIEWER
+// ========================================================================
+
+$console->line();
+$console->info('13. JSON Viewer');
 
 $data = [
     'user' => [
         'id' => 1,
         'name' => 'Andy',
-        'email' => 'andy@example.com',
         'active' => true,
-        'score' => 98.5,
     ],
 ];
 
-$console->json($data);
-
-$console->jsonRaw($data);
-
-$console->columns([
-    ['Users', '123'],
-    ['Servers', '5'],
-    ['Logs', '42'],
-]);
-
-$console->timeline([
-    ['12:00', 'Application démarrée', 'Service web initialisé sur le port 8080'],
-    ['12:01', 'Connexion DB', 'Connexion établie en 45ms'],
-    ['12:02', 'Serveur prêt', 'En attente des requêtes'],
-]);
-
-$password = $console->secret('Mot de passe ?');
-$console->success('Mot de passe enregistré !');
-
-return;
 $console
-    ->title('⚡ Badges prédéfinis')
-    ->line()
-    ->badgeSuccess()
-    ->badgeDanger()
-    ->badgeWarning()
-    ->badgeInfo()
-    ->badgePrimary()
-    ->badgeDark()
-    ->badgeLight()
-    ->line()
-    ->render();
+    ->json($data)
+    ->jsonCompact($data);
 
-return;
+// ========================================================================
+// 14. NOTIFICATIONS
+// ========================================================================
 
-$console->progressBar(100, 40, '📦 Téléchargement');
+$console->line();
+$console->info('14. Notifications');
 
-for ($i = 0; $i < 100; $i++) {
-    usleep(30000);
-    $console->advance();
-}
+$console
+    ->notifySuccess('✅ Succès !')
+    ->notifyError('❌ Erreur !')
+    ->notifyWarning('⚠️  Attention !')
+    ->notifyInfo('ℹ️  Information !');
 
-$console->finish();
+// ========================================================================
+// 15. LOGS
+// ========================================================================
 
-// Une autre barre avec un style
-$console->progressBarStyled(50, 'processing', 40);
+$console->line();
+$console->info('15. Logs');
+
+$console
+    ->logInfo('Chargement...')
+    ->logSuccess('✅ Terminé')
+    ->logError('❌ Erreur')
+    ->logWarning('⚠️  Attention')
+    ->logDebug('Debug info');
+
+// ========================================================================
+// 16. SONS
+// ========================================================================
+
+$console->line();
+$console->info('16. Sons');
+
+$console
+    ->soundSuccess()
+    ->soundError()
+    ->soundInfo()
+    ->sound(SoundType::SUCCESS);
+
+// ========================================================================
+// 17. PROGRESS BAR
+// ========================================================================
+
+$console->line();
+$console->info('17. Barre de progression');
+
+$console
+    ->progressBar(50, 40, '📦 Téléchargement');
 
 for ($i = 0; $i < 50; $i++) {
     usleep(30000);
     $console->advance();
 }
 
-$console->finish()->success('✅ Opération terminée !');
+$console->finish();
 
-$console->spinner('Connexion à Redis...', function ($spinner) {
-    // Simulation d'un travail long
-    sleep(3);
-    $spinner->success('Connecté');
+// ========================================================================
+// 18. SPINNER
+// ========================================================================
+
+$console->line();
+$console->info('18. Spinner');
+
+$console->spinner('Chargement en cours...', function ($spinner) {
+    sleep(2);
+    $spinner->success('Terminé !');
 });
+
+// ========================================================================
+// 19. FORMULAIRE
+// ========================================================================
+
+$console->line();
+$console->info('19. Formulaire');
+
+$answers = $console->form()
+    ->title('📝 Formulaire')
+    ->line()
+    ->ask('Nom :', 'name', null, 'yellow')
+    ->ask('Email :', 'email', null, 'cyan')
+    ->number('Âge :', 'age', 1, 120)
+    ->confirm('Newsletter ?', 'newsletter', true)
+    ->choice('Langage :', 'lang', ['PHP', 'JavaScript', 'Python'])
+    ->submit();
+
+$console->line();
+$console->title('📊 Réponses');
+$console->line();
+
+$console->keyValueWithValueColor([
+    'Nom' => $answers->get('name'),
+    'Email' => $answers->get('email'),
+    'Âge' => $answers->get('age'),
+    'Newsletter' => $answers->get('newsletter') ? '✅ Oui' : '❌ Non',
+    'Langage' => $answers->get('lang'),
+], 'green');
+
+// ========================================================================
+// FIN
+// ========================================================================
+
+$console->line();
+$console->success('✅ Toutes les démonstrations sont terminées !');
+$console->render();

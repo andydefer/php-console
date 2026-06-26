@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AndyDefer\ConsoleWriter\Console\Components;
 
+use AndyDefer\ConsoleWriter\Console\Abstracts\Component;
 use AndyDefer\DomainStructures\Utils\ListCollection;
 use AndyDefer\DomainStructures\Utils\MapCollection;
 use AndyDefer\PhpVo\ValueObjects\Types\FloatVO;
@@ -21,7 +22,7 @@ use AndyDefer\PhpVo\ValueObjects\Types\StringVO;
  * // Age    : 30
  * // City   : Paris
  */
-final class KeyValue
+final class KeyValue extends Component
 {
     private const SEPARATOR = ' : ';
 
@@ -32,15 +33,12 @@ final class KeyValue
     public static function render(MapCollection $data, int $indent = 0): string
     {
         if ($data->isEmpty()) {
-            return '<fg=yellow>⚠️  No data to display</fg=yellow>';
+            return self::fg('⚠️  No data to display', 'yellow');
         }
 
         $padding = StringVO::from('')->concat(str_repeat(self::INDENT, $indent));
 
-        // 1. Calculer la longueur maximale des clés (sans balises)
         $maxKeyLength = self::calculateMaxKeyLength($data);
-
-        // 2. Largeur totale = max + extra spaces
         $totalKeyWidth = $maxKeyLength->add(FloatVO::from(self::EXTRA_SPACES));
 
         $lines = ListCollection::from([]);
@@ -49,13 +47,10 @@ final class KeyValue
             $keyString = self::toSafeString($key);
             $valueString = self::toSafeString($value);
 
-            // 3. Padder la clé à la largeur totale
             $paddedKey = self::padKey($keyString, $totalKeyWidth);
 
             $line = $padding
-                ->concat('<fg=cyan>')
-                ->concat($paddedKey)
-                ->concat('</fg>')
+                ->concat(self::fg($paddedKey->getValue(), 'cyan'))
                 ->concat(self::SEPARATOR)
                 ->concat($valueString);
 
@@ -68,13 +63,10 @@ final class KeyValue
         );
     }
 
-    /**
-     * Affiche les clés => valeurs avec une couleur personnalisée pour les clés
-     */
     public static function renderWithColor(MapCollection $data, string $keyColor = 'cyan', int $indent = 0): string
     {
         if ($data->isEmpty()) {
-            return '<fg=yellow>⚠️  No data to display</fg=yellow>';
+            return self::fg('⚠️  No data to display', 'yellow');
         }
 
         $padding = StringVO::from('')->concat(str_repeat(self::INDENT, $indent));
@@ -88,9 +80,7 @@ final class KeyValue
             $paddedKey = self::padKey($keyString, $totalKeyWidth);
 
             $line = $padding
-                ->concat('<fg='.$keyColor.'>')
-                ->concat($paddedKey)
-                ->concat('</fg>')
+                ->concat(self::fg($paddedKey->getValue(), $keyColor))
                 ->concat(self::SEPARATOR)
                 ->concat($valueString);
 
@@ -103,13 +93,10 @@ final class KeyValue
         );
     }
 
-    /**
-     * Affiche les clés => valeurs avec des valeurs colorées
-     */
     public static function renderWithValueColor(MapCollection $data, string $valueColor = 'green', int $indent = 0): string
     {
         if ($data->isEmpty()) {
-            return '<fg=yellow>⚠️  No data to display</fg=yellow>';
+            return self::fg('⚠️  No data to display', 'yellow');
         }
 
         $padding = StringVO::from('')->concat(str_repeat(self::INDENT, $indent));
@@ -125,9 +112,7 @@ final class KeyValue
             $line = $padding
                 ->concat($paddedKey)
                 ->concat(self::SEPARATOR)
-                ->concat('<fg='.$valueColor.'>')
-                ->concat($valueString)
-                ->concat('</fg>');
+                ->concat(self::fg($valueString->getValue(), $valueColor));
 
             $lines = $lines->add($line->getValue());
         }
@@ -138,13 +123,10 @@ final class KeyValue
         );
     }
 
-    /**
-     * Affiche les clés => valeurs avec un séparateur personnalisé
-     */
     public static function renderWithSeparator(MapCollection $data, string $separator = ' → ', int $indent = 0): string
     {
         if ($data->isEmpty()) {
-            return '<fg=yellow>⚠️  No data to display</fg=yellow>';
+            return self::fg('⚠️  No data to display', 'yellow');
         }
 
         $padding = StringVO::from('')->concat(str_repeat(self::INDENT, $indent));
@@ -158,9 +140,7 @@ final class KeyValue
             $paddedKey = self::padKey($keyString, $totalKeyWidth);
 
             $line = $padding
-                ->concat('<fg=cyan>')
-                ->concat($paddedKey)
-                ->concat('</fg>')
+                ->concat(self::fg($paddedKey->getValue(), 'cyan'))
                 ->concat($separator)
                 ->concat($valueString);
 
@@ -173,17 +153,12 @@ final class KeyValue
         );
     }
 
-    /**
-     * Calcule la longueur maximale des clés en utilisant mb_strlen
-     * pour gérer correctement les caractères Unicode (émojis, accents)
-     */
     private static function calculateMaxKeyLength(MapCollection $data): FloatVO
     {
         $maxLength = FloatVO::from(0);
 
         foreach ($data->keys() as $key) {
             $keyString = self::toSafeString($key);
-            // Utiliser mb_strlen pour les caractères multi-octets
             $length = FloatVO::from(mb_strlen($keyString->getValue()));
             $maxLength = $maxLength->max($length);
         }
@@ -191,10 +166,6 @@ final class KeyValue
         return $maxLength;
     }
 
-    /**
-     * Pad la clé à la largeur totale
-     * Largeur totale = longueur max + extra spaces
-     */
     private static function padKey(StringVO $key, FloatVO $totalWidth): StringVO
     {
         $keyLength = FloatVO::from(mb_strlen($key->getValue()));
@@ -207,9 +178,6 @@ final class KeyValue
         return $key->concat(str_repeat(' ', $paddingNeeded));
     }
 
-    /**
-     * Convertit n'importe quelle valeur en StringVO de manière sécurisée
-     */
     private static function toSafeString(mixed $value): StringVO
     {
         if ($value === null) {
@@ -235,13 +203,10 @@ final class KeyValue
         return StringVO::from((string) $value);
     }
 
-    /**
-     * Version avec espaces supplémentaires personnalisables
-     */
     public static function renderWithExtraSpaces(MapCollection $data, int $extraSpaces = 3, int $indent = 0): string
     {
         if ($data->isEmpty()) {
-            return '<fg=yellow>⚠️  No data to display</fg=yellow>';
+            return self::fg('⚠️  No data to display', 'yellow');
         }
 
         $padding = StringVO::from('')->concat(str_repeat(self::INDENT, $indent));
@@ -255,9 +220,7 @@ final class KeyValue
             $paddedKey = self::padKey($keyString, $totalKeyWidth);
 
             $line = $padding
-                ->concat('<fg=cyan>')
-                ->concat($paddedKey)
-                ->concat('</fg>')
+                ->concat(self::fg($paddedKey->getValue(), 'cyan'))
                 ->concat(self::SEPARATOR)
                 ->concat($valueString);
 
@@ -270,13 +233,10 @@ final class KeyValue
         );
     }
 
-    /**
-     * Version de debug pour voir les longueurs
-     */
     public static function debug(MapCollection $data, int $indent = 0): string
     {
         if ($data->isEmpty()) {
-            return '<fg=yellow>⚠️  No data to display</fg=yellow>';
+            return self::fg('⚠️  No data to display', 'yellow');
         }
 
         $padding = StringVO::from('')->concat(str_repeat(self::INDENT, $indent));
@@ -284,12 +244,12 @@ final class KeyValue
         $totalKeyWidth = $maxKeyLength->add(FloatVO::from(self::EXTRA_SPACES));
         $lines = ListCollection::from([]);
 
-        $lines = $lines->add('<fg=yellow>📊 Debug: maxLength='.$maxKeyLength->getValue().', totalWidth='.$totalKeyWidth->getValue().'</fg=yellow>');
+        $lines = $lines->add(self::fg('📊 Debug: maxLength='.$maxKeyLength->getValue().', totalWidth='.$totalKeyWidth->getValue(), 'yellow'));
 
         foreach ($data->keys() as $key) {
             $keyString = self::toSafeString($key);
             $length = mb_strlen($keyString->getValue());
-            $lines = $lines->add('<fg=gray>  key: "'.$keyString->getValue().'" length='.$length.'</fg=gray>');
+            $lines = $lines->add(self::fg('  key: "'.$keyString->getValue().'" length='.$length, 'gray'));
         }
 
         $lines = $lines->add('');
@@ -300,9 +260,7 @@ final class KeyValue
             $paddedKey = self::padKey($keyString, $totalKeyWidth);
 
             $line = $padding
-                ->concat('<fg=cyan>')
-                ->concat($paddedKey)
-                ->concat('</fg>')
+                ->concat(self::fg($paddedKey->getValue(), 'cyan'))
                 ->concat(self::SEPARATOR)
                 ->concat($valueString);
 

@@ -6,9 +6,8 @@ namespace AndyDefer\ConsoleWriter\Tests\Unit\Components;
 
 use AndyDefer\ConsoleWriter\Console\Components\TableList;
 use AndyDefer\DomainStructures\Utils\ListCollection;
-use PHPUnit\Framework\TestCase;
 
-final class TableListTest extends TestCase
+final class TableListTest extends ComponentTestCase
 {
     public function test_render_basic_list(): void
     {
@@ -19,7 +18,7 @@ final class TableListTest extends TestCase
         ]);
 
         $result = TableList::render($headers, $rows);
-        $plainResult = strip_tags($result);
+        $plainResult = $this->stripAnsi($result);
 
         $this->assertStringContainsString('4 colonnes → affichage en liste', $plainResult);
         $this->assertMatchesRegularExpression('/ID\s+:\s+1/', $plainResult);
@@ -38,10 +37,9 @@ final class TableListTest extends TestCase
         $rows = ListCollection::from([]);
 
         $result = TableList::render($headers, $rows);
+        $plainResult = $this->stripAnsi($result);
 
-        $this->assertStringContainsString('No data to display', $result);
-        $this->assertStringContainsString('<fg=yellow>', $result);
-        $this->assertStringContainsString('</fg=yellow>', $result);
+        $this->assertStringContainsString('No data to display', $plainResult);
     }
 
     public function test_render_with_title(): void
@@ -52,7 +50,7 @@ final class TableListTest extends TestCase
         ]);
 
         $result = TableList::renderWithTitle($headers, $rows, '📦 Users List');
-        $plainResult = strip_tags($result);
+        $plainResult = $this->stripAnsi($result);
 
         $this->assertStringContainsString('📦 Users List', $plainResult);
         $this->assertMatchesRegularExpression('/Name\s+:\s+John Doe/', $plainResult);
@@ -68,11 +66,10 @@ final class TableListTest extends TestCase
         ]);
 
         $result = TableList::render($headers, $rows);
-        $plainResult = strip_tags($result);
+        $plainResult = $this->stripAnsi($result);
 
         $this->assertMatchesRegularExpression('/ID\s+:\s+1/', $plainResult);
 
-        // ✅ Vérifier que le texte est présent (même coupé sur plusieurs lignes)
         $this->assertStringContainsString('This is a very long description that should', $plainResult);
         $this->assertStringContainsString('be wrapped because it exceeds the maximum', $plainResult);
         $this->assertStringContainsString('width of 60 characters', $plainResult);
@@ -88,7 +85,7 @@ final class TableListTest extends TestCase
         ]);
 
         $result = TableList::render($headers, $rows);
-        $plainResult = strip_tags($result);
+        $plainResult = $this->stripAnsi($result);
 
         $this->assertMatchesRegularExpression('/Product\s+:\s+Laptop/', $plainResult);
         $this->assertMatchesRegularExpression('/Price\s+:\s+999.99/', $plainResult);
@@ -109,7 +106,7 @@ final class TableListTest extends TestCase
         ]);
 
         $result = TableList::render($headers, $rows);
-        $plainResult = strip_tags($result);
+        $plainResult = $this->stripAnsi($result);
 
         $this->assertMatchesRegularExpression('/URL\s+:\s+https:\/\/example.com\/page\?param=value/', $plainResult);
         $this->assertMatchesRegularExpression('/Path\s+:\s+\/home\/user\/documents\/file.txt/', $plainResult);
@@ -123,7 +120,7 @@ final class TableListTest extends TestCase
         ]);
 
         $result = TableList::render($headers, $rows);
-        $plainResult = strip_tags($result);
+        $plainResult = $this->stripAnsi($result);
 
         $this->assertMatchesRegularExpression('/Nom\s+:\s+Jean-Pierre/', $plainResult);
         $this->assertMatchesRegularExpression('/Ville\s+:\s+Montréal/', $plainResult);
@@ -138,7 +135,7 @@ final class TableListTest extends TestCase
         ]);
 
         $result = TableList::render($headers, $rows);
-        $plainResult = strip_tags($result);
+        $plainResult = $this->stripAnsi($result);
 
         $this->assertMatchesRegularExpression('/String\s+:\s+Hello/', $plainResult);
         $this->assertMatchesRegularExpression('/Integer\s+:\s+42/', $plainResult);
@@ -158,7 +155,7 @@ final class TableListTest extends TestCase
         ]);
 
         $result = TableList::render($headers, $rows);
-        $plainResult = strip_tags($result);
+        $plainResult = $this->stripAnsi($result);
 
         $this->assertStringContainsString('A very long key name that exceeds 25 characters', $plainResult);
         $this->assertStringContainsString('Value 1', $plainResult);
@@ -174,7 +171,7 @@ final class TableListTest extends TestCase
         ]);
 
         $result = TableList::render($headers, $rows);
-        $plainResult = strip_tags($result);
+        $plainResult = $this->stripAnsi($result);
 
         $this->assertMatchesRegularExpression('/Name\s+:\s+John Doe/', $plainResult);
         $this->assertMatchesRegularExpression('/Email\s+:\s+john@example.com/', $plainResult);
@@ -188,7 +185,7 @@ final class TableListTest extends TestCase
         ]);
 
         $result = TableList::render($headers, $rows);
-        $plainResult = strip_tags($result);
+        $plainResult = $this->stripAnsi($result);
 
         $this->assertMatchesRegularExpression('/Name\s+:\s+John Doe/', $plainResult);
         $this->assertMatchesRegularExpression('/Email\s+:\s*/', $plainResult);

@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace AndyDefer\ConsoleWriter\Console\Components;
 
-use AndyDefer\ConsoleWriter\Console\Enums\FgColor;
-use AndyDefer\ConsoleWriter\Console\Enums\Options;
-use AndyDefer\ConsoleWriter\Console\Services\AnsiConverterService;
-use AndyDefer\ConsoleWriter\Contracts\Services\AnsiConverterInterface;
+use AndyDefer\ConsoleWriter\Console\Abstracts\Component;
+use AndyDefer\ConsoleWriter\Console\ValueObjects\CleanedTextVO;
 use AndyDefer\DomainStructures\Utils\ListCollection;
+use AndyDefer\PhpVo\ValueObjects\Types\StringVO;
 
 /**
  * Affiche plusieurs blocs côte à côte dans la console
+ * Chaque colonne a sa propre largeur basée sur son élément le plus long
  *
  * @example
  * Columns::render(
@@ -26,366 +26,321 @@ use AndyDefer\DomainStructures\Utils\ListCollection;
  * //  Users        Servers        Logs
  * //   123           5             42
  */
-final class Columns
+final class Columns extends Component
 {
     private const DEFAULT_SEPARATOR = '   ';
 
     private const DEFAULT_WIDTH = 20;
 
-    private static ?AnsiConverterInterface $ansi = null;
+    private const MIN_PADDING = 2;
 
-    private static function getAnsi(): AnsiConverterInterface
-    {
-        if (self::$ansi === null) {
-            self::$ansi = new AnsiConverterService;
-        }
-
-        return self::$ansi;
-    }
-
-    /**
-     * Affiche plusieurs colonnes avec centrage
-     *
-     * @param  ListCollection|array  $columns  Chaque colonne est un ListCollection ou un array
-     * @param  int  $width  Largeur de chaque colonne
-     * @param  string  $separator  Séparateur entre les colonnes
-     */
-    public static function render(ListCollection|array $columns, int $width = self::DEFAULT_WIDTH, string $separator = self::DEFAULT_SEPARATOR): string
-    {
+    public static function render(
+        ListCollection|array $columns,
+        int $width = self::DEFAULT_WIDTH,
+        string $separator = self::DEFAULT_SEPARATOR
+    ): string {
         $columnsCollection = self::normalizeColumns($columns);
 
         if ($columnsCollection->isEmpty()) {
             return '<fg=yellow>⚠️  No data to display</fg=yellow>';
         }
 
-        $ansi = self::getAnsi();
-        $lines = [];
+        $cleanColumns = self::cleanEmojisFromColumns($columnsCollection);
+        $vt = self::getVT();
+        $vt->clear();
 
-        // Calculer le nombre maximal de lignes
-        $maxRows = $columnsCollection->reduce(
+        $maxRows = $cleanColumns->reduce(
             fn ($carry, $column) => max($carry, $column->count()),
             0
         );
 
-        // Calculer les largeurs de chaque colonne
-        $columnWidths = $columnsCollection->map(
-            fn ($column) => $column->reduce(
-                fn ($carry, $cell) => max($carry, mb_strlen($cell)),
-                0
-            ) + 2
-        );
-
-        // Largeur minimale
-        $columnWidths = $columnWidths->map(
-            fn ($w) => max($w, $width)
-        );
-
-        // Construire chaque ligne
-        for ($rowIndex = 0; $rowIndex < $maxRows; $rowIndex++) {
-            $line = '';
-            $colIndex = 0;
-
-            foreach ($columnsCollection as $index => $column) {
-                $cell = $column->get($rowIndex) ?? '';
-                $colWidth = $columnWidths->get($index);
-
-                // Centrer le texte
-                $padded = self::padCenter($cell, $colWidth);
-
-                // Appliquer le style bold au premier élément de chaque colonne
-                if ($rowIndex === 0) {
-                    $padded = $ansi->option($padded, Options::BOLD);
-                }
-
-                $line .= $padded;
-
-                if ($colIndex < $columnsCollection->count() - 1) {
-                    $line .= $separator;
-                }
-                $colIndex++;
-            }
-
-            $lines[] = $line;
-        }
-
-        return implode(PHP_EOL, $lines);
-    }
-
-    /**
-     * Affiche des colonnes avec icônes (centré)
-     *
-     * @param  ListCollection|array  $columns  Chaque colonne est un ListCollection ou un array
-     */
-    public static function renderWithIcons(ListCollection|array $columns, int $width = self::DEFAULT_WIDTH, string $separator = self::DEFAULT_SEPARATOR): string
-    {
-        $columnsCollection = self::normalizeColumns($columns);
-
-        if ($columnsCollection->isEmpty()) {
-            return '<fg=yellow>⚠️  No data to display</fg=yellow>';
-        }
-
-        $ansi = self::getAnsi();
-        $lines = [];
-
-        $maxRows = $columnsCollection->reduce(
-            fn ($carry, $column) => max($carry, $column->count()),
-            0
-        );
-
-        $columnWidths = $columnsCollection->map(
-            fn ($column) => $column->reduce(
-                fn ($carry, $cell) => max($carry, mb_strlen($cell)),
-                0
-            ) + 2
-        );
-
-        $columnWidths = $columnWidths->map(
-            fn ($w) => max($w, $width)
-        );
+        // ✅ Largeur calculée par colonne (basée sur l'élément le plus long de chaque colonne)
+        $columnWidths = self::calculateColumnWidths($cleanColumns, $width);
 
         for ($rowIndex = 0; $rowIndex < $maxRows; $rowIndex++) {
             $line = '';
             $colIndex = 0;
 
-            foreach ($columnsCollection as $index => $column) {
+            foreach ($cleanColumns as $index => $column) {
                 $cell = $column->get($rowIndex) ?? '';
                 $colWidth = $columnWidths->get($index);
 
                 $padded = self::padCenter($cell, $colWidth);
 
                 if ($rowIndex === 0) {
-                    $padded = $ansi->option($padded, Options::BOLD);
+                    $padded = self::bold($padded);
                 }
 
                 $line .= $padded;
 
-                if ($colIndex < $columnsCollection->count() - 1) {
+                if ($colIndex < $cleanColumns->count() - 1) {
                     $line .= $separator;
                 }
                 $colIndex++;
             }
 
-            $lines[] = $line;
+            $vt->add('line_'.$rowIndex, $line);
         }
 
-        return implode(PHP_EOL, $lines);
+        $vt->render();
+
+        return $vt->getLines()->reduce(
+            fn ($carry, $line) => $carry === '' ? $line : $carry.PHP_EOL.$line,
+            ''
+        );
     }
 
-    /**
-     * Affiche des colonnes avec des couleurs personnalisées (centré)
-     *
-     * @param  ListCollection|array  $columns  Chaque colonne est un ListCollection ou un array
-     * @param  array  $colors  Couleurs par colonne (ex: ['cyan', 'green', 'yellow'])
-     */
-    public static function renderWithColors(ListCollection|array $columns, array $colors = [], int $width = self::DEFAULT_WIDTH, string $separator = self::DEFAULT_SEPARATOR): string
-    {
+    public static function renderWithColors(
+        ListCollection|array $columns,
+        array $colors = [],
+        int $width = self::DEFAULT_WIDTH,
+        string $separator = self::DEFAULT_SEPARATOR
+    ): string {
         $columnsCollection = self::normalizeColumns($columns);
 
         if ($columnsCollection->isEmpty()) {
             return '<fg=yellow>⚠️  No data to display</fg=yellow>';
         }
 
-        $ansi = self::getAnsi();
-        $lines = [];
+        $cleanColumns = self::cleanEmojisFromColumns($columnsCollection);
+        $vt = self::getVT();
+        $vt->clear();
 
-        $maxRows = $columnsCollection->reduce(
+        $maxRows = $cleanColumns->reduce(
             fn ($carry, $column) => max($carry, $column->count()),
             0
         );
 
-        $columnWidths = $columnsCollection->map(
-            fn ($column) => $column->reduce(
-                fn ($carry, $cell) => max($carry, mb_strlen($cell)),
-                0
-            ) + 2
-        );
-
-        $columnWidths = $columnWidths->map(
-            fn ($w) => max($w, $width)
-        );
+        $columnWidths = self::calculateColumnWidths($cleanColumns, $width);
 
         for ($rowIndex = 0; $rowIndex < $maxRows; $rowIndex++) {
             $line = '';
             $colIndex = 0;
 
-            foreach ($columnsCollection as $index => $column) {
+            foreach ($cleanColumns as $index => $column) {
                 $cell = $column->get($rowIndex) ?? '';
                 $color = $colors[$index] ?? 'white';
-                $fg = self::getFgColor($color);
                 $colWidth = $columnWidths->get($index);
 
                 $padded = self::padCenter($cell, $colWidth);
 
                 if ($rowIndex === 0) {
-                    $padded = $ansi->option($padded, Options::BOLD);
+                    $padded = self::bold($padded);
                 }
 
-                $line .= $ansi->colorEnum($padded, $fg);
+                $line .= self::fg($padded, $color);
 
-                if ($colIndex < $columnsCollection->count() - 1) {
+                if ($colIndex < $cleanColumns->count() - 1) {
                     $line .= $separator;
                 }
                 $colIndex++;
             }
 
-            $lines[] = $line;
+            $vt->add('line_'.$rowIndex, $line);
         }
 
-        return implode(PHP_EOL, $lines);
+        $vt->render();
+
+        return $vt->getLines()->reduce(
+            fn ($carry, $line) => $carry === '' ? $line : $carry.PHP_EOL.$line,
+            ''
+        );
     }
 
     /**
-     * Affiche des colonnes avec des en-têtes séparées (centré)
-     *
-     * @param  ListCollection|array  $columns  Chaque colonne est un ListCollection ou un array
+     * Affiche des colonnes avec des icônes
      */
-    public static function renderWithHeaders(ListCollection|array $columns, int $width = self::DEFAULT_WIDTH, string $separator = self::DEFAULT_SEPARATOR): string
-    {
+    public static function renderWithIcons(
+        ListCollection|array $columns,
+        int $width = self::DEFAULT_WIDTH,
+        string $separator = self::DEFAULT_SEPARATOR
+    ): string {
+        // renderWithIcons est un alias de render (les icônes sont déjà dans les données)
+        return self::render($columns, $width, $separator);
+    }
+
+    public static function renderWithHeaders(
+        ListCollection|array $columns,
+        int $width = self::DEFAULT_WIDTH,
+        string $separator = self::DEFAULT_SEPARATOR
+    ): string {
         $columnsCollection = self::normalizeColumns($columns);
 
         if ($columnsCollection->isEmpty()) {
             return '<fg=yellow>⚠️  No data to display</fg=yellow>';
         }
 
-        $ansi = self::getAnsi();
-        $lines = [];
+        $cleanColumns = self::cleanEmojisFromColumns($columnsCollection);
+        $vt = self::getVT();
+        $vt->clear();
 
-        $maxRows = $columnsCollection->reduce(
+        $maxRows = $cleanColumns->reduce(
             fn ($carry, $column) => max($carry, $column->count()),
             0
         );
 
-        $columnWidths = $columnsCollection->map(
-            fn ($column) => $column->reduce(
-                fn ($carry, $cell) => max($carry, mb_strlen($cell)),
-                0
-            ) + 2
-        );
+        $columnWidths = self::calculateColumnWidths($cleanColumns, $width);
 
-        $columnWidths = $columnWidths->map(
-            fn ($w) => max($w, $width)
-        );
-
-        // Ligne d'en-tête (centrée)
+        // Ligne d'en-tête
         $headerLine = '';
         $colIndex = 0;
-        foreach ($columnsCollection as $index => $column) {
+        foreach ($cleanColumns as $index => $column) {
             $header = $column->get(0) ?? '';
             $colWidth = $columnWidths->get($index);
             $padded = self::padCenter($header, $colWidth);
-            $headerLine .= $ansi->option($padded, Options::BOLD);
+            $headerLine .= self::bold($padded);
 
-            if ($colIndex < $columnsCollection->count() - 1) {
+            if ($colIndex < $cleanColumns->count() - 1) {
                 $headerLine .= $separator;
             }
             $colIndex++;
         }
-        $lines[] = $headerLine;
+        $vt->add('line_0', $headerLine);
 
-        // Séparateur (avec des tirets)
+        // Séparateur
         $sepLine = '';
         $colIndex = 0;
-        foreach ($columnsCollection as $index => $column) {
+        foreach ($cleanColumns as $index => $column) {
             $colWidth = $columnWidths->get($index);
             $sepLine .= str_repeat('─', $colWidth);
-            if ($colIndex < $columnsCollection->count() - 1) {
+            if ($colIndex < $cleanColumns->count() - 1) {
                 $sepLine .= str_repeat(' ', mb_strlen($separator));
             }
             $colIndex++;
         }
-        $lines[] = $sepLine;
+        $vt->add('line_1', $sepLine);
 
-        // Données (à partir de la ligne 1, centrées)
+        // Données
         for ($rowIndex = 1; $rowIndex < $maxRows; $rowIndex++) {
             $line = '';
             $colIndex = 0;
 
-            foreach ($columnsCollection as $index => $column) {
+            foreach ($cleanColumns as $index => $column) {
                 $cell = $column->get($rowIndex) ?? '';
                 $colWidth = $columnWidths->get($index);
 
                 $padded = self::padCenter($cell, $colWidth);
                 $line .= $padded;
 
-                if ($colIndex < $columnsCollection->count() - 1) {
+                if ($colIndex < $cleanColumns->count() - 1) {
                     $line .= $separator;
                 }
                 $colIndex++;
             }
 
-            $lines[] = $line;
+            $vt->add('line_'.($rowIndex + 1), $line);
         }
 
-        return implode(PHP_EOL, $lines);
+        $vt->render();
+
+        return $vt->getLines()->reduce(
+            fn ($carry, $line) => $carry === '' ? $line : $carry.PHP_EOL.$line,
+            ''
+        );
     }
 
-    /**
-     * Affiche des colonnes en format compact (centré)
-     *
-     * @param  ListCollection|array  $columns  Chaque colonne est un ListCollection ou un array
-     */
-    public static function renderCompact(ListCollection|array $columns, string $separator = self::DEFAULT_SEPARATOR): string
-    {
+    public static function renderCompact(
+        ListCollection|array $columns,
+        string $separator = self::DEFAULT_SEPARATOR
+    ): string {
         $columnsCollection = self::normalizeColumns($columns);
 
         if ($columnsCollection->isEmpty()) {
             return '<fg=yellow>⚠️  No data to display</fg=yellow>';
         }
 
-        $ansi = self::getAnsi();
-        $lines = [];
+        $cleanColumns = self::cleanEmojisFromColumns($columnsCollection);
+        $vt = self::getVT();
+        $vt->clear();
 
-        $maxRows = $columnsCollection->reduce(
+        $maxRows = $cleanColumns->reduce(
             fn ($carry, $column) => max($carry, $column->count()),
             0
         );
 
-        // Calculer les largeurs maximales par ligne
-        $maxWidths = [];
-        for ($rowIndex = 0; $rowIndex < $maxRows; $rowIndex++) {
-            $maxWidth = 0;
-            foreach ($columnsCollection as $column) {
-                $cell = $column->get($rowIndex) ?? '';
-                $maxWidth = max($maxWidth, mb_strlen($cell));
-            }
-            $maxWidths[$rowIndex] = $maxWidth + 2;
-        }
+        // ✅ Largeur calculée par colonne pour le mode compact
+        $columnWidths = self::calculateColumnWidths($cleanColumns, 0);
 
         for ($rowIndex = 0; $rowIndex < $maxRows; $rowIndex++) {
             $line = '';
             $colIndex = 0;
 
-            foreach ($columnsCollection as $column) {
+            foreach ($cleanColumns as $index => $column) {
                 $cell = $column->get($rowIndex) ?? '';
-                $width = $maxWidths[$rowIndex] ?? mb_strlen($cell) + 2;
+                $colWidth = $columnWidths->get($index);
 
-                $padded = self::padCenter($cell, $width);
+                $padded = self::padCenter($cell, $colWidth);
 
                 if ($rowIndex === 0) {
-                    $padded = $ansi->option($padded, Options::BOLD);
+                    $padded = self::bold($padded);
                 }
 
                 $line .= $padded;
 
-                if ($colIndex < $columnsCollection->count() - 1) {
+                if ($colIndex < $cleanColumns->count() - 1) {
                     $line .= $separator;
                 }
                 $colIndex++;
             }
 
-            $lines[] = $line;
+            $vt->add('line_'.$rowIndex, $line);
         }
 
-        return implode(PHP_EOL, $lines);
+        $vt->render();
+
+        return $vt->getLines()->reduce(
+            fn ($carry, $line) => $carry === '' ? $line : $carry.PHP_EOL.$line,
+            ''
+        );
     }
 
     /**
-     * Normalise les colonnes en ListCollection
+     * ✅ Calcule les largeurs par colonne
+     * Chaque colonne a sa propre largeur basée sur son élément le plus long
      */
+    private static function calculateColumnWidths(ListCollection $columns, int $minWidth): ListCollection
+    {
+        return $columns->map(
+            function ($column) use ($minWidth) {
+                $maxLength = $column->reduce(
+                    fn ($carry, $cell) => max($carry, mb_strlen($cell)),
+                    0
+                );
+
+                // Ajouter un padding minimum
+                $width = $maxLength + self::MIN_PADDING;
+
+                // Appliquer la largeur minimale si spécifiée
+                if ($minWidth > 0) {
+                    $width = max($width, $minWidth);
+                }
+
+                return $width;
+            }
+        );
+    }
+
+    /**
+     * ✅ Nettoie les émojis des colonnes
+     */
+    private static function cleanEmojisFromColumns(ListCollection $columns): ListCollection
+    {
+        $cleanColumns = [];
+        foreach ($columns as $column) {
+            $columnArray = $column instanceof ListCollection ? $column->toArray() : (array) $column;
+            $cleanColumn = [];
+            foreach ($columnArray as $cell) {
+                $cleanColumn[] = (new CleanedTextVO(StringVO::from($cell)->getValue()))->withoutEmojis()->getValue();
+            }
+            $cleanColumns[] = ListCollection::from($cleanColumn);
+        }
+
+        return ListCollection::from($cleanColumns);
+    }
+
     private static function normalizeColumns(ListCollection|array $columns): ListCollection
     {
         if ($columns instanceof ListCollection) {
-            // Si c'est déjà une ListCollection, on s'assure que chaque élément est une ListCollection
             $normalized = $columns->map(
                 fn ($column) => $column instanceof ListCollection ? $column : ListCollection::from((array) $column)
             );
@@ -393,7 +348,6 @@ final class Columns
             return $normalized;
         }
 
-        // Si c'est un array, on le convertit
         $result = [];
         foreach ($columns as $column) {
             $result[] = is_array($column) ? ListCollection::from($column) : ListCollection::from([$column]);
@@ -402,9 +356,6 @@ final class Columns
         return ListCollection::from($result);
     }
 
-    /**
-     * Centre le texte dans une largeur donnée
-     */
     private static function padCenter(string $text, int $width): string
     {
         $textLength = mb_strlen($text);
@@ -418,21 +369,5 @@ final class Columns
         $right = $padding - $left;
 
         return str_repeat(' ', $left).$text.str_repeat(' ', $right);
-    }
-
-    private static function getFgColor(string $color): FgColor
-    {
-        return match ($color) {
-            'black' => FgColor::BLACK,
-            'red' => FgColor::RED,
-            'green' => FgColor::GREEN,
-            'yellow' => FgColor::YELLOW,
-            'blue' => FgColor::BLUE,
-            'magenta' => FgColor::MAGENTA,
-            'cyan' => FgColor::CYAN,
-            'white' => FgColor::WHITE,
-            'gray' => FgColor::GRAY,
-            default => FgColor::WHITE,
-        };
     }
 }

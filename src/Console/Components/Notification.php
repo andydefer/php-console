@@ -4,16 +4,12 @@ declare(strict_types=1);
 
 namespace AndyDefer\ConsoleWriter\Console\Components;
 
-use AndyDefer\ConsoleWriter\Console\Enums\FgColor;
+use AndyDefer\ConsoleWriter\Console\Abstracts\Component;
 use AndyDefer\ConsoleWriter\Console\Enums\Options;
-use AndyDefer\ConsoleWriter\Console\Services\AnsiConverterService;
-use AndyDefer\ConsoleWriter\Contracts\Services\AnsiConverterInterface;
 
-final class Notification
+final class Notification extends Component
 {
     private const DEFAULT_ICON = '🔔';
-
-    private static ?AnsiConverterInterface $ansi = null;
 
     /**
      * Mapping des types vers leurs icônes
@@ -24,15 +20,6 @@ final class Notification
         'warning' => '⚠️',
         'info' => 'ℹ️',
     ];
-
-    private static function getAnsi(): AnsiConverterInterface
-    {
-        if (self::$ansi === null) {
-            self::$ansi = new AnsiConverterService;
-        }
-
-        return self::$ansi;
-    }
 
     public static function render(string $message, string $type = 'default', ?string $icon = null): string
     {
@@ -116,22 +103,6 @@ final class Notification
             'warning' => 'yellow',
             'info' => 'blue',
             default => 'white',
-        };
-    }
-
-    private static function getFgColor(string $color): FgColor
-    {
-        return match ($color) {
-            'black' => FgColor::BLACK,
-            'red' => FgColor::RED,
-            'green' => FgColor::GREEN,
-            'yellow' => FgColor::YELLOW,
-            'blue' => FgColor::BLUE,
-            'magenta' => FgColor::MAGENTA,
-            'cyan' => FgColor::CYAN,
-            'white' => FgColor::WHITE,
-            'gray' => FgColor::GRAY,
-            default => FgColor::WHITE,
         };
     }
 }

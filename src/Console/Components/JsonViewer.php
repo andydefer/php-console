@@ -4,27 +4,15 @@ declare(strict_types=1);
 
 namespace AndyDefer\ConsoleWriter\Console\Components;
 
+use AndyDefer\ConsoleWriter\Console\Abstracts\Component;
 use AndyDefer\ConsoleWriter\Console\Enums\FgColor;
-use AndyDefer\ConsoleWriter\Console\Services\AnsiConverterService;
-use AndyDefer\ConsoleWriter\Contracts\Services\AnsiConverterInterface;
 
 /**
  * Affiche du JSON formaté et coloré dans la console
  */
-final class JsonViewer
+final class JsonViewer extends Component
 {
     private const INDENT = '  ';
-
-    private static ?AnsiConverterInterface $ansi = null;
-
-    private static function getAnsi(): AnsiConverterInterface
-    {
-        if (self::$ansi === null) {
-            self::$ansi = new AnsiConverterService;
-        }
-
-        return self::$ansi;
-    }
 
     public static function render(array|string $data, int $indent = 0): string
     {
@@ -32,7 +20,7 @@ final class JsonViewer
         $decoded = json_decode($json, true);
 
         if ($decoded === null && json_last_error() !== JSON_ERROR_NONE) {
-            return '<fg=red>⚠️  Invalid JSON: '.json_last_error_msg().'</fg=red>';
+            return self::fg('⚠️  Invalid JSON: '.json_last_error_msg(), 'red');
         }
 
         if (empty($decoded)) {
@@ -60,7 +48,7 @@ final class JsonViewer
         $decoded = json_decode($json, true);
 
         if ($decoded === null && json_last_error() !== JSON_ERROR_NONE) {
-            return '<fg=red>⚠️  Invalid JSON: '.json_last_error_msg().'</fg=red>';
+            return self::fg('⚠️  Invalid JSON: '.json_last_error_msg(), 'red');
         }
 
         return json_encode($decoded, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
@@ -153,7 +141,7 @@ final class JsonViewer
         $decoded = json_decode($json, true);
 
         if ($decoded === null && json_last_error() !== JSON_ERROR_NONE) {
-            return '<fg=red>⚠️  Invalid JSON: '.json_last_error_msg().'</fg=red>';
+            return self::fg('⚠️  Invalid JSON: '.json_last_error_msg(), 'red');
         }
 
         return self::formatJsonWithDepth($decoded, $maxDepth, $currentDepth);

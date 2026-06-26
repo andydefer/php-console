@@ -10,10 +10,22 @@ use AndyDefer\DomainStructures\Utils\MapCollection;
 use AndyDefer\DomainStructures\Utils\SetCollection;
 
 /**
- * Interface pour les composants stylisés (badge, metric, columns, timeline, tree, json, link, list, keyvalue)
+ * Interface pour les composants stylisés (badge, metric, columns, timeline, tree, json, link, list, keyvalue, table)
  */
 interface StyledComponentsInterface
 {
+    // ========== ALERT ==========
+
+    /**
+     * Affiche une alerte avec icône et couleur personnalisée
+     */
+    public function alertWithIconAndColor(string $message, string $icon, string $color, int $padding = 4): self;
+
+    /**
+     * Affiche une alerte complète avec tous les paramètres
+     */
+    public function alertFull(string $message, string $icon, string $color, string $borderChar, int $padding): self;
+
     // ========== LINK ==========
 
     /**
@@ -244,4 +256,9 @@ interface StyledComponentsInterface
      * Affiche du JSON avec profondeur limitée
      */
     public function jsonWithDepth(array|string $data, int $maxDepth = 3): self;
+
+    /**
+     * Ajoute des espaces
+     */
+    public function space(int $count = 1): self;
 }

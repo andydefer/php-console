@@ -5,9 +5,8 @@ declare(strict_types=1);
 namespace AndyDefer\ConsoleWriter\Tests\Unit\Components;
 
 use AndyDefer\ConsoleWriter\Console\Components\Metric;
-use PHPUnit\Framework\TestCase;
 
-final class MetricTest extends TestCase
+final class MetricTest extends ComponentTestCase
 {
     public function test_render_metric(): void
     {

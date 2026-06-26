@@ -4,11 +4,8 @@ declare(strict_types=1);
 
 namespace AndyDefer\ConsoleWriter\Console\Components;
 
-use AndyDefer\ConsoleWriter\Console\Enums\FgColor;
+use AndyDefer\ConsoleWriter\Console\Abstracts\Component;
 use AndyDefer\ConsoleWriter\Console\Enums\Options;
-use AndyDefer\ConsoleWriter\Console\Services\AnsiConverterService;
-use AndyDefer\ConsoleWriter\Contracts\Services\AnsiConverterInterface;
-use AndyDefer\DomainStructures\Utils\MapCollection;
 
 /**
  * Affiche un badge coloré dans la console
@@ -23,122 +20,8 @@ use AndyDefer\DomainStructures\Utils\MapCollection;
  * // [FAILED]   (rouge)
  * // [PENDING]  (jaune)
  */
-final class Badge
+final class Badge extends Component
 {
-    private static ?AnsiConverterInterface $ansi = null;
-
-    private static ?MapCollection $styles = null;
-
-    /**
-     * Initialise le service ANSI
-     */
-    private static function getAnsi(): AnsiConverterInterface
-    {
-        if (self::$ansi === null) {
-            self::$ansi = new AnsiConverterService;
-        }
-
-        return self::$ansi;
-    }
-
-    /**
-     * Styles prédéfinis pour les badges
-     */
-    private static function getStyles(): MapCollection
-    {
-        if (self::$styles === null) {
-            self::$styles = MapCollection::from([
-                'default' => [
-                    'fg' => 'white',
-                    'icon' => '',
-                    'tag' => '',
-                ],
-                'success' => [
-                    'fg' => 'green',
-                    'icon' => '🟢',
-                    'tag' => 'SUCCESS',
-                ],
-                'danger' => [
-                    'fg' => 'red',
-                    'icon' => '🔴',
-                    'tag' => 'FAILED',
-                ],
-                'warning' => [
-                    'fg' => 'yellow',
-                    'icon' => '🟡',
-                    'tag' => 'PENDING',
-                ],
-                'info' => [
-                    'fg' => 'blue',
-                    'icon' => '🔵',
-                    'tag' => 'INFO',
-                ],
-                'primary' => [
-                    'fg' => 'cyan',
-                    'icon' => '🟣',
-                    'tag' => 'PRIMARY',
-                ],
-                'dark' => [
-                    'fg' => 'gray',
-                    'icon' => '⚫',
-                    'tag' => 'DARK',
-                ],
-                'light' => [
-                    'fg' => 'white',
-                    'icon' => '⚪',
-                    'tag' => 'LIGHT',
-                ],
-                // Versions sombres (plus visibles)
-                'success-dark' => [
-                    'fg' => 'green',
-                    'icon' => '🟢',
-                    'tag' => 'SUCCESS',
-                ],
-                'danger-dark' => [
-                    'fg' => 'red',
-                    'icon' => '🔴',
-                    'tag' => 'FAILED',
-                ],
-                'warning-dark' => [
-                    'fg' => 'yellow',
-                    'icon' => '🟡',
-                    'tag' => 'PENDING',
-                ],
-                'info-dark' => [
-                    'fg' => 'blue',
-                    'icon' => '🔵',
-                    'tag' => 'INFO',
-                ],
-                'primary-dark' => [
-                    'fg' => 'cyan',
-                    'icon' => '🟣',
-                    'tag' => 'PRIMARY',
-                ],
-            ]);
-        }
-
-        return self::$styles;
-    }
-
-    /**
-     * Convertit un nom de couleur en FgColor enum
-     */
-    private static function getFgColor(string $color): FgColor
-    {
-        return match ($color) {
-            'black' => FgColor::BLACK,
-            'red' => FgColor::RED,
-            'green' => FgColor::GREEN,
-            'yellow' => FgColor::YELLOW,
-            'blue' => FgColor::BLUE,
-            'magenta' => FgColor::MAGENTA,
-            'cyan' => FgColor::CYAN,
-            'white' => FgColor::WHITE,
-            'gray' => FgColor::GRAY,
-            default => FgColor::WHITE,
-        };
-    }
-
     /**
      * Affiche un badge simple (outline - sans fond)
      */

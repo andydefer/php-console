@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace AndyDefer\ConsoleWriter\Console\Components;
 
+use AndyDefer\ConsoleWriter\Console\Abstracts\Component;
 use AndyDefer\DomainStructures\Utils\ListCollection;
 
-final class AdaptiveTable
+final class AdaptiveTable extends Component
 {
     private const MAX_TABLE_COLUMNS = 5;
 
