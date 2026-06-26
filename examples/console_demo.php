@@ -20,6 +20,61 @@ echo "\n";
 // ========================================================================
 
 $console = new Console;
+$console->title('🚀 Script de déploiement');
+$console->line();
+
+$console->logInfo('Démarrage du déploiement...');
+sleep(1);
+
+$console->logDebug('Vérification des prérequis...');
+sleep(1);
+
+$console->logSuccess('✅ Prérequis vérifiés');
+sleep(1);
+
+$console->logInfo('Téléchargement des sources...');
+sleep(2);
+
+$console->logSuccess('✅ Sources téléchargées (2.4 MB)');
+sleep(1);
+
+$console->logInfo('Installation des dépendances...');
+sleep(2);
+
+$console->logWarning('⚠️ Certaines dépendances sont obsolètes');
+sleep(1);
+
+$console->logSuccess('✅ Déploiement terminé !');
+
+return;
+$console
+    ->notifySuccess('Tâche terminée avec succès !')
+    ->soundSuccess();
+
+$console
+    ->notifyError('Erreur critique !')
+    ->soundError();
+
+$console
+    ->notifyInfo('Nouvelle mise à jour disponible')
+    ->soundInfo();
+
+$console
+    ->title('📊 Dashboard')
+    ->line()
+    ->keyValue([
+        'CPU' => '45%',
+        'RAM' => '8.2 Go',
+        'DISQUE' => '256 Go',
+    ])
+    ->line()
+    ->notifySuccess('Tous les services sont en ligne')
+    ->notifyInfo('3 nouveaux utilisateurs')
+    ->notifyWarning('Cache à nettoyer')
+    ->line()
+    ->success('✅ Dashboard chargé');
+
+return;
 
 // ========================================================================
 // 2. DÉMONSTRATION DES COMPOSANTS DE BASE

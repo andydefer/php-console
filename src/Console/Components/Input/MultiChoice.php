@@ -7,16 +7,20 @@ namespace AndyDefer\ConsoleWriter\Console\Components\Input;
 use AndyDefer\ConsoleWriter\Console\Contracts\InputReaderInterface;
 use AndyDefer\ConsoleWriter\Console\Enums\FgColor;
 use AndyDefer\ConsoleWriter\Console\Enums\Options;
+use AndyDefer\ConsoleWriter\Console\Services\VirtualTerminalService;
 use AndyDefer\ConsoleWriter\Contracts\Services\AnsiConverterInterface;
 
 final class MultiChoice
 {
     private static ?string $oldStty = null;
 
-    private static int $lineCount = 0;
+    private static ?VirtualTerminalService $vt = null;
 
     private static array $state = [];
 
+    /**
+     * ✅ Signature originale conservée
+     */
     public static function execute(
         AnsiConverterInterface $ansi,
         InputReaderInterface $reader,
@@ -37,54 +41,45 @@ final class MultiChoice
             'color' => $color,
             'fg' => $fg,
             'ansi' => $ansi,
+            'reader' => $reader,
         ];
+
+        // ✅ Initialiser le VirtualTerminalService
+        self::$vt = new VirtualTerminalService;
 
         self::setupTerminal();
 
         try {
-            // ✅ Premier affichage initial
+            // ✅ Premier affichage
             self::render();
 
             while (true) {
-                $fp = fopen('php://stdin', 'r');
-                $read = [$fp];
-                $write = null;
-                $except = null;
+                $key = self::readKey();
 
-                if (stream_select($read, $write, $except, 0, 100000) > 0) {
-                    $char = fread($fp, 3);
-                    $key = self::parseKey($char);
-
-                    if ($key === 'UP') {
-                        $currentIndex = max(0, $currentIndex - 1);
-                        self::$state['currentIndex'] = $currentIndex;
-                    } elseif ($key === 'DOWN') {
-                        $currentIndex = min(count($options) - 1, $currentIndex + 1);
-                        self::$state['currentIndex'] = $currentIndex;
-                    } elseif ($key === 'SPACE') {
-                        $currentOption = $options[$currentIndex];
-                        if (in_array($currentOption, $selected, true)) {
-                            $selected = array_filter($selected, fn ($item) => $item !== $currentOption);
-                        } else {
-                            $selected[] = $currentOption;
-                        }
-                        self::$state['selected'] = $selected;
-                    } elseif ($key === 'ENTER') {
-                        fclose($fp);
-                        break;
-                    } elseif ($key === 'ESC') {
-                        fclose($fp);
-
-                        return [];
+                if ($key === 'UP') {
+                    $currentIndex = max(0, $currentIndex - 1);
+                    self::$state['currentIndex'] = $currentIndex;
+                } elseif ($key === 'DOWN') {
+                    $currentIndex = min(count($options) - 1, $currentIndex + 1);
+                    self::$state['currentIndex'] = $currentIndex;
+                } elseif ($key === 'SPACE') {
+                    $currentOption = $options[$currentIndex];
+                    if (in_array($currentOption, $selected, true)) {
+                        $selected = array_filter($selected, fn ($item) => $item !== $currentOption);
+                    } else {
+                        $selected[] = $currentOption;
                     }
-
-                    // ✅ 1. Effacer l'affichage précédent
-                    self::clearLines();
-
-                    // ✅ 2. Réafficher le bloc mis à jour au même endroit
-                    self::render();
+                    self::$state['selected'] = $selected;
+                } elseif ($key === 'ENTER') {
+                    break;
+                } elseif ($key === 'ESC') {
+                    return [];
+                } else {
+                    continue;
                 }
-                fclose($fp);
+
+                // ✅ Rafraîchir l'affichage
+                self::render();
             }
         } finally {
             self::restoreTerminal();
@@ -104,14 +99,15 @@ final class MultiChoice
 
         $lines = [];
 
+        // Question
         $questionFormatted = $ansi->colorEnum(
             $ansi->option($question, Options::BOLD),
             $fg
         );
         $lines[] = $questionFormatted;
-
         $lines[] = '';
 
+        // Options
         foreach ($options as $index => $option) {
             $isSelected = in_array($option, $selected, true);
             $isCurrent = ($index === $currentIndex);
@@ -133,26 +129,24 @@ final class MultiChoice
         $lines[] = '';
         $lines[] = '↑/↓ naviguer, Espace sélectionner, Entrée valider, Échap annuler';
 
-        // ✅ Stocker le nombre exact de lignes du bloc
-        self::$lineCount = count($lines);
+        // ✅ Effacer l'affichage précédent avec VT
+        self::$vt->clearDisplay();
+        self::$vt->clear();
 
-        // ✅ Affichage propre suivi d'un retour à la ligne pour le curseur
-        echo implode(PHP_EOL, $lines).PHP_EOL;
+        // ✅ Ajouter chaque ligne avec une clé
+        foreach ($lines as $index => $line) {
+            self::$vt->add('line_'.$index, $line);
+        }
+
+        // ✅ Rendre le nouveau contenu
+        self::$vt->render();
     }
 
-    private static function clearLines(): void
+    private static function readKey(): string
     {
-        if (self::$lineCount > 0) {
-            // ✅ On remonte d'une ligne d'abord pour compenser le PHP_EOL final du render
-            echo "\033[1A";
+        $reader = self::$state['reader'];
 
-            // ✅ On remonte et efface chaque ligne du bas vers le haut
-            // Répéter l'opération (Effacer la ligne + Monter d'une ligne)
-            echo str_repeat("\033[2K\033[1A", self::$lineCount - 1);
-
-            // ✅ On efface la toute première ligne (la question) et on se remet au début (\r)
-            echo "\033[2K\r";
-        }
+        return $reader->readKey();
     }
 
     private static function setupTerminal(): void
@@ -167,33 +161,6 @@ final class MultiChoice
             shell_exec('stty '.self::$oldStty);
             self::$oldStty = null;
         }
-    }
-
-    private static function parseKey(string $char): string
-    {
-        if ($char === false || $char === '') {
-            return 'UNKNOWN';
-        }
-
-        if (strlen($char) === 3 && $char[0] === "\033" && $char[1] === '[') {
-            return match ($char[2]) {
-                'A' => 'UP',
-                'B' => 'DOWN',
-                'C' => 'RIGHT',
-                'D' => 'LEFT',
-                default => 'UNKNOWN',
-            };
-        }
-
-        if ($char === "\033") {
-            return 'ESC';
-        }
-
-        return match ($char) {
-            ' ' => 'SPACE',
-            "\r", "\n" => 'ENTER',
-            default => 'UNKNOWN',
-        };
     }
 
     private static function getFgColor(string $color): FgColor

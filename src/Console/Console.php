@@ -15,8 +15,11 @@ use AndyDefer\ConsoleWriter\Console\Components\JsonViewer;
 use AndyDefer\ConsoleWriter\Console\Components\KeyValue;
 use AndyDefer\ConsoleWriter\Console\Components\Link;
 use AndyDefer\ConsoleWriter\Console\Components\ListComponent;
+use AndyDefer\ConsoleWriter\Console\Components\Logger;
 use AndyDefer\ConsoleWriter\Console\Components\Metric;
+use AndyDefer\ConsoleWriter\Console\Components\Notification;
 use AndyDefer\ConsoleWriter\Console\Components\ProgressBar;
+use AndyDefer\ConsoleWriter\Console\Components\Sound;
 use AndyDefer\ConsoleWriter\Console\Components\Spinner;
 use AndyDefer\ConsoleWriter\Console\Components\Success;
 use AndyDefer\ConsoleWriter\Console\Components\Table;
@@ -25,6 +28,7 @@ use AndyDefer\ConsoleWriter\Console\Components\Title;
 use AndyDefer\ConsoleWriter\Console\Components\Tree;
 use AndyDefer\ConsoleWriter\Console\Contracts\InputReaderInterface;
 use AndyDefer\ConsoleWriter\Console\Enums\ListStyle;
+use AndyDefer\ConsoleWriter\Console\Enums\SoundType;
 use AndyDefer\ConsoleWriter\Console\Services\AnsiConverterService;
 use AndyDefer\ConsoleWriter\Console\Services\StandardInputReaderService;
 use AndyDefer\ConsoleWriter\Contracts\Services\AnsiConverterInterface;
@@ -620,6 +624,197 @@ final class Console
     public function multiChoice(string $question, array $options, array $selected = [], string $color = 'cyan'): array
     {
         return $this->getInput()->multiChoice($question, $options, $selected, $color);
+    }
+
+    // ========== NOTIFICATION ==========
+
+    /**
+     * Affiche une notification
+     *
+     * @example
+     * $console->notify('Build terminé');
+     * $console->notify('Build terminé', 'success');
+     * $console->notify('Build terminé', 'error', '🚀');
+     */
+    public function notify(string $message, string $type = 'info', string $icon = '🔔'): self
+    {
+        $this->addLine(Notification::render($message, $type, $icon));
+
+        return $this;
+    }
+
+    /**
+     * Affiche une notification de succès
+     */
+    public function notifySuccess(string $message): self
+    {
+        $this->addLine(Notification::success($message));
+
+        return $this;
+    }
+
+    /**
+     * Affiche une notification d'erreur
+     */
+    public function notifyError(string $message): self
+    {
+        $this->addLine(Notification::error($message));
+
+        return $this;
+    }
+
+    /**
+     * Affiche une notification d'avertissement
+     */
+    public function notifyWarning(string $message): self
+    {
+        $this->addLine(Notification::warning($message));
+
+        return $this;
+    }
+
+    /**
+     * Affiche une notification d'information
+     */
+    public function notifyInfo(string $message): self
+    {
+        $this->addLine(Notification::info($message));
+
+        return $this;
+    }
+
+    // ========== SOUND ==========
+
+    /**
+     * Joue un son de succès
+     */
+    public function soundSuccess(): self
+    {
+        Sound::success();
+
+        return $this;
+    }
+
+    /**
+     * Joue un son d'erreur
+     */
+    public function soundError(): self
+    {
+        Sound::error();
+
+        return $this;
+    }
+
+    /**
+     * Joue un son d'information
+     */
+    public function soundInfo(): self
+    {
+        Sound::info();
+
+        return $this;
+    }
+
+    /**
+     * Joue un son personnalisé
+     */
+    public function sound(SoundType $type): self
+    {
+        Sound::play($type);
+
+        return $this;
+    }
+
+    /**
+     * Joue un son de manière asynchrone
+     */
+    public function soundAsync(SoundType $type): self
+    {
+        Sound::playAsync($type);
+
+        return $this;
+    }
+
+    // ========== LOGGER ==========
+
+    /**
+     * Log de niveau INFO (bleu)
+     */
+    public function logInfo(string $message): self
+    {
+        $this->addLine(Logger::info($message));
+
+        return $this;
+    }
+
+    /**
+     * Log de niveau SUCCESS (vert)
+     */
+    public function logSuccess(string $message): self
+    {
+        $this->addLine(Logger::success($message));
+
+        return $this;
+    }
+
+    /**
+     * Log de niveau ERROR (rouge)
+     */
+    public function logError(string $message): self
+    {
+        $this->addLine(Logger::error($message));
+
+        return $this;
+    }
+
+    /**
+     * Log de niveau WARNING (jaune)
+     */
+    public function logWarning(string $message): self
+    {
+        $this->addLine(Logger::warning($message));
+
+        return $this;
+    }
+
+    /**
+     * Log de niveau DEBUG (gris)
+     */
+    public function logDebug(string $message): self
+    {
+        $this->addLine(Logger::debug($message));
+
+        return $this;
+    }
+
+    /**
+     * Log de niveau NOTICE (cyan)
+     */
+    public function logNotice(string $message): self
+    {
+        $this->addLine(Logger::notice($message));
+
+        return $this;
+    }
+
+    /**
+     * Log de niveau CRITICAL (magenta)
+     */
+    public function logCritical(string $message): self
+    {
+        $this->addLine(Logger::critical($message));
+
+        return $this;
+    }
+
+    /**
+     * Log personnalisé
+     */
+    public function log(string $level, string $message, string $color = 'white'): self
+    {
+        $this->addLine(Logger::log($level, $message, $color));
+
+        return $this;
     }
 
     // ========== BUFFER ==========

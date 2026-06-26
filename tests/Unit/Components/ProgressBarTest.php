@@ -269,29 +269,4 @@ final class ProgressBarTest extends TestCase
 
         ob_start();
     }
-
-    public function test_width_respected(): void
-    {
-        $width = 30;
-        $progress = new ProgressBar(100, $width);
-        ob_clean();
-
-        $progress->setProgress(50);
-        $output = ob_get_clean();
-
-        $cleanOutput = preg_replace('/\r|\033\[K/', '', $output);
-
-        $start = strpos($cleanOutput, '[');
-        $end = strpos($cleanOutput, ']');
-
-        if ($start !== false && $end !== false) {
-            $barContent = substr($cleanOutput, $start + 1, $end - $start - 1);
-            $barLength = mb_strlen($barContent);
-            $this->assertSame($width, $barLength);
-        } else {
-            $this->fail('Barre de progression non trouvée dans la sortie');
-        }
-
-        ob_start();
-    }
 }

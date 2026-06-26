@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AndyDefer\ConsoleWriter\Console\Components;
 
+use AndyDefer\ConsoleWriter\Console\Services\VirtualTerminalService;
 use AndyDefer\DomainStructures\Utils\MapCollection;
 use AndyDefer\PhpVo\ValueObjects\Types\FloatVO;
 
@@ -30,6 +31,10 @@ final class ProgressBar
     private string $suffix;
 
     private bool $showPercentage;
+
+    private VirtualTerminalService $vt;
+
+    private string $key;
 
     /**
      * @var MapCollection<string, array{prefix: string, suffix: string}>
@@ -74,12 +79,17 @@ final class ProgressBar
         return self::$styles;
     }
 
+    /**
+     * ✅ Constructeur avec injection optionnelle du VT
+     */
     public function __construct(
         int $total,
         int $width = self::DEFAULT_WIDTH,
         string $prefix = '',
         string $suffix = '',
-        bool $showPercentage = true
+        bool $showPercentage = true,
+        ?VirtualTerminalService $vt = null,
+        string $key = 'progress_bar'
     ) {
         $this->total = $total;
         $this->current = 0;
@@ -87,14 +97,18 @@ final class ProgressBar
         $this->prefix = $prefix;
         $this->suffix = $suffix;
         $this->showPercentage = $showPercentage;
+        $this->vt = $vt ?? new VirtualTerminalService;
+        $this->key = $key;
 
-        $this->display();
+        // Ajouter la ligne initiale dans le VT
+        $this->vt->add($this->key, $this->buildBar());
+        $this->vt->render();
     }
 
     public function advance(int $steps = 1): self
     {
         $this->current = min($this->current + $steps, $this->total);
-        $this->display();
+        $this->updateDisplay();
 
         return $this;
     }
@@ -102,7 +116,7 @@ final class ProgressBar
     public function setProgress(int $current): self
     {
         $this->current = min(max($current, 0), $this->total);
-        $this->display();
+        $this->updateDisplay();
 
         return $this;
     }
@@ -110,7 +124,7 @@ final class ProgressBar
     public function finish(): self
     {
         $this->current = $this->total;
-        $this->display();
+        $this->updateDisplay();
         echo PHP_EOL;
 
         return $this;
@@ -119,7 +133,7 @@ final class ProgressBar
     public function setPrefix(string $prefix): self
     {
         $this->prefix = $prefix;
-        $this->display();
+        $this->updateDisplay();
 
         return $this;
     }
@@ -127,12 +141,12 @@ final class ProgressBar
     public function setSuffix(string $suffix): self
     {
         $this->suffix = $suffix;
-        $this->display();
+        $this->updateDisplay();
 
         return $this;
     }
 
-    private function display(): void
+    private function buildBar(): string
     {
         $percentage = FloatVO::from($this->current / $this->total * 100);
         $filled = (int) round($this->width * ($this->current / $this->total));
@@ -158,7 +172,17 @@ final class ProgressBar
             $output .= ' '.$this->suffix;
         }
 
-        echo "\r\033[K".$output;
+        return $output;
+    }
+
+    /**
+     * ✅ Met à jour uniquement la ligne modifiée (pas de flash)
+     */
+    private function updateDisplay(): void
+    {
+        $this->vt
+            ->update($this->key, $this->buildBar())
+            ->render();
     }
 
     public function getPercentage(): float
@@ -201,7 +225,6 @@ final class ProgressBar
     public static function addStyle(string $name, string $prefix, string $suffix = ''): void
     {
         $styles = self::getStyles();
-        // ✅ Correction : on met à jour la collection
         self::$styles = $styles->put($name, [
             'prefix' => $prefix,
             'suffix' => $suffix,

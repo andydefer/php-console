@@ -9,6 +9,8 @@ use AndyDefer\ConsoleWriter\Console\Enums\ListStyle;
 
 $console = new Console;
 
+echo "\x07";
+
 // ========================================================================
 // 1. ASK - Saisie simple
 // ========================================================================

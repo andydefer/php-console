@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace AndyDefer\ConsoleWriter\Console\Components;
 
+use AndyDefer\ConsoleWriter\Console\Services\VirtualTerminalService;
+
 final class Spinner
 {
     private const FRAMES = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
@@ -28,11 +30,14 @@ final class Spinner
 
     private ?int $pid = null;
 
+    private ?VirtualTerminalService $vt = null;
+
     public function __construct(string $message, string $prefix = '', string $suffix = '')
     {
         $this->message = $message;
         $this->prefix = $prefix;
         $this->suffix = $suffix;
+        $this->vt = new VirtualTerminalService;
     }
 
     /**
@@ -44,6 +49,11 @@ final class Spinner
         $this->finished = false;
         $this->frameIndex = 0;
         $this->dotIndex = 0;
+
+        // Initialiser l'affichage avec VirtualTerminalService
+        $this->vt
+            ->add('spinner_line', $this->buildSpinnerLine())
+            ->render();
 
         // Démarrer l'animation dans un processus séparé
         if (function_exists('pcntl_fork')) {
@@ -107,6 +117,11 @@ final class Spinner
         $this->frameIndex = 0;
         $this->dotIndex = 0;
 
+        // Initialiser l'affichage
+        $this->vt
+            ->add('spinner_line', $this->buildSpinnerLine())
+            ->render();
+
         // Exécuter la tâche
         try {
             $task($this);
@@ -136,9 +151,14 @@ final class Spinner
         $this->frameIndex = 0;
         $this->dotIndex = 0;
 
+        // Initialiser l'affichage
+        $this->vt
+            ->add('spinner_line', $this->buildSpinnerLine())
+            ->render();
+
         // Boucle de vérification
         while ($this->running) {
-            $this->render();
+            $this->updateSpinnerLine();
             usleep($checkInterval);
 
             if ($isComplete()) {
@@ -157,15 +177,15 @@ final class Spinner
     private function animate(): void
     {
         while ($this->running) {
-            $this->render();
+            $this->updateSpinnerLine();
             usleep(self::FRAME_INTERVAL);
         }
     }
 
     /**
-     * Rendu du spinner
+     * Construit la ligne du spinner
      */
-    private function render(): void
+    private function buildSpinnerLine(): string
     {
         $frame = self::FRAMES[$this->frameIndex % count(self::FRAMES)];
         $dots = self::DOTS[$this->dotIndex % count(self::DOTS)];
@@ -182,10 +202,29 @@ final class Spinner
             $output .= ' '.$this->suffix;
         }
 
-        echo "\r\033[K".$output;
+        return $output;
+    }
 
+    /**
+     * Met à jour la ligne du spinner dans le VT
+     */
+    private function updateSpinnerLine(): void
+    {
         $this->frameIndex++;
         $this->dotIndex++;
+
+        $line = $this->buildSpinnerLine();
+        $this->vt
+            ->update('spinner_line', $line)
+            ->render();
+    }
+
+    /**
+     * Rendu du spinner (méthode legacy pour compatibilité)
+     */
+    private function render(): void
+    {
+        $this->updateSpinnerLine();
     }
 
     public function success(string $message = ''): self
@@ -193,7 +232,20 @@ final class Spinner
         $this->running = false;
         $this->finished = true;
         $this->killChild();
-        $this->stop('✅', $message);
+
+        $finalMessage = $message !== '' ? $message : $this->message;
+        $line = '✅ '.$finalMessage;
+
+        if ($this->suffix !== '') {
+            $line .= ' '.$this->suffix;
+        }
+
+        $this->vt
+            ->update('spinner_line', $line)
+            ->render()
+            ->clearDisplay();
+
+        echo $line.PHP_EOL;
 
         return $this;
     }
@@ -203,7 +255,20 @@ final class Spinner
         $this->running = false;
         $this->finished = true;
         $this->killChild();
-        $this->stop('❌', $message);
+
+        $finalMessage = $message !== '' ? $message : $this->message;
+        $line = '❌ '.$finalMessage;
+
+        if ($this->suffix !== '') {
+            $line .= ' '.$this->suffix;
+        }
+
+        $this->vt
+            ->update('spinner_line', $line)
+            ->render()
+            ->clearDisplay();
+
+        echo $line.PHP_EOL;
 
         return $this;
     }
@@ -213,7 +278,20 @@ final class Spinner
         $this->running = false;
         $this->finished = true;
         $this->killChild();
-        $this->stop('ℹ️', $message);
+
+        $finalMessage = $message !== '' ? $message : $this->message;
+        $line = 'ℹ️ '.$finalMessage;
+
+        if ($this->suffix !== '') {
+            $line .= ' '.$this->suffix;
+        }
+
+        $this->vt
+            ->update('spinner_line', $line)
+            ->render()
+            ->clearDisplay();
+
+        echo $line.PHP_EOL;
 
         return $this;
     }
@@ -223,21 +301,43 @@ final class Spinner
         $this->running = false;
         $this->finished = true;
         $this->killChild();
-        $this->stop('⚠️', $message);
+
+        $finalMessage = $message !== '' ? $message : $this->message;
+        $line = '⚠️ '.$finalMessage;
+
+        if ($this->suffix !== '') {
+            $line .= ' '.$this->suffix;
+        }
+
+        $this->vt
+            ->update('spinner_line', $line)
+            ->render()
+            ->clearDisplay();
+
+        echo $line.PHP_EOL;
 
         return $this;
     }
 
     public function stop(string $icon = '✅', string $message = ''): self
     {
+        $this->running = false;
+        $this->finished = true;
+        $this->killChild();
+
         $finalMessage = $message !== '' ? $message : $this->message;
-        $output = $icon.' '.$finalMessage;
+        $line = $icon.' '.$finalMessage;
 
         if ($this->suffix !== '') {
-            $output .= ' '.$this->suffix;
+            $line .= ' '.$this->suffix;
         }
 
-        echo "\r\033[K".$output.PHP_EOL;
+        $this->vt
+            ->update('spinner_line', $line)
+            ->render()
+            ->clearDisplay();
+
+        echo $line.PHP_EOL;
 
         return $this;
     }
@@ -255,6 +355,7 @@ final class Spinner
     public function setMessage(string $message): self
     {
         $this->message = $message;
+        $this->updateSpinnerLine();
 
         return $this;
     }
