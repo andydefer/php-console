@@ -497,7 +497,7 @@ final class Console implements ConsoleInterface
 
     public function jsonRaw(array|string $data): self
     {
-        $this->addLine(JsonViewer::renderRaw($data));
+        ($this->addLine(JsonViewer::renderRaw($data)));
 
         return $this;
     }
