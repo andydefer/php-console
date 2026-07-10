@@ -13,30 +13,31 @@
 2. [Concepts fondamentaux](#concepts-fondamentaux)
 3. [Démarrage rapide](#démarrage-rapide)
 4. [Messages stylisés](#messages-stylisés)
-5. [Alertes](#alertes)
-6. [Tableaux](#tableaux)
-7. [Tableau adaptatif](#tableau-adaptatif)
-8. [Listes](#listes)
-9. [Clés → Valeurs](#clés--valeurs)
-10. [Liens](#liens)
-11. [Badges](#badges)
-12. [Métriques](#métriques)
-13. [Colonnes](#colonnes)
-14. [Timeline](#timeline)
-15. [Arborescence (Tree)](#arborescence-tree)
-16. [JSON Viewer](#json-viewer)
-17. [Barre de progression](#barre-de-progression)
-18. [Spinner](#spinner)
-19. [Logger](#logger)
-20. [Notifications](#notifications)
-21. [Sons](#sons)
-22. [Saisies utilisateur](#saisies-utilisateur)
-23. [Formulaire](#formulaire)
-24. [Buffer et affichage différé](#buffer-et-affichage-différé)
-25. [VirtualTerminalService](#virtualterminalservice)
-26. [Référence complète des méthodes](#référence-complète-des-méthodes)
-27. [Exemples complets](#exemples-complets)
-28. [Licence](#licence)
+5. [Séparateurs](#séparateurs)
+6. [Alertes](#alertes)
+7. [Tableaux](#tableaux)
+8. [Tableau adaptatif](#tableau-adaptatif)
+9. [Listes](#listes)
+10. [Clés → Valeurs](#clés--valeurs)
+11. [Liens](#liens)
+12. [Badges](#badges)
+13. [Métriques](#métriques)
+14. [Colonnes](#colonnes)
+15. [Timeline](#timeline)
+16. [Arborescence (Tree)](#arborescence-tree)
+17. [JSON Viewer](#json-viewer)
+18. [Barre de progression](#barre-de-progression)
+19. [Spinner](#spinner)
+20. [Logger](#logger)
+21. [Notifications](#notifications)
+22. [Sons](#sons)
+23. [Saisies utilisateur](#saisies-utilisateur)
+24. [Formulaire](#formulaire)
+25. [Buffer et affichage différé](#buffer-et-affichage-différé)
+26. [VirtualTerminalService](#virtualterminalservice)
+27. [Référence complète des méthodes](#référence-complète-des-méthodes)
+28. [Exemples complets](#exemples-complets)
+29. [Licence](#licence)
 
 ---
 
@@ -61,7 +62,7 @@ Le package repose sur une architecture fluide en couches :
 
 ```
 Console (API principale)
-    ├── Renderable (Messages, Titres, Alertes)
+    ├── Renderable (Messages, Titres, Alertes, Séparateurs)
     ├── StyledComponents (Badge, Metric, Columns, Timeline, Tree, JSON)
     ├── Interactive (Ask, Confirm, Choice, Suggest, Number, MultiChoice)
     ├── Progress (ProgressBar, Spinner)
@@ -143,6 +144,110 @@ $console->title('📊 Dashboard Système');
 ║   📊 Dashboard Système   ║
 ╚══════════════════════════╝
 ```
+
+---
+
+## Séparateurs
+
+Les séparateurs permettent de délimiter visuellement les sections d'une sortie console.
+
+### Séparateur standard
+
+```php
+$console->separator();
+// --------------------------------------------------------------------------------
+```
+
+### Séparateur avec caractère personnalisé
+
+```php
+$console->separator('*');
+// ********************************************************************************
+
+$console->separator('═', 40);
+// ════════════════════════════════════════
+```
+
+### Séparateur avec couleur
+
+```php
+$console->separator('-', 80, 'cyan');
+$console->separator('=', 50, 'green');
+$console->separator('~', 60, 'magenta');
+```
+
+### Séparateur double
+
+```php
+$console->separatorDouble();
+// ================================================================================
+
+$console->separatorDouble(40);
+// ========================================
+```
+
+### Séparateur avec titre centré
+
+```php
+$console->separatorWithTitle('📋 RAPPORT D\'AUDIT');
+// ------------------------------- 📋 RAPPORT D'AUDIT ------------------------------
+
+$console->separatorWithTitle('⭐ CHAPITRE 1', '=', 80, 'cyan');
+// ============================= ⭐ CHAPITRE 1 =============================
+```
+
+### Combinaison avec d'autres composants
+
+```php
+$console
+    ->title('📊 Dashboard')
+    ->separator('=', 60)
+    ->info('Contenu du dashboard')
+    ->separator('-', 60)
+    ->alert('⚠️  Alerte importante')
+    ->separator('=', 60)
+    ->success('✅ Dashboard chargé');
+```
+
+### Rendu complet
+
+```
+==========================================================================
+📊 Dashboard
+==========================================================================
+ℹ️  Contenu du dashboard
+------------------------------------------------------------
+⚠️  Alerte importante
+==========================================================================
+✅ Dashboard chargé
+```
+
+### Avec rendu manuel (classe statique)
+
+```php
+use AndyDefer\ConsoleWriter\Console\Components\Separator;
+
+echo Separator::render(40, 'cyan');
+echo Separator::renderDouble(50, 'green');
+echo Separator::renderWithTitle('TITRE', '-', 60, 'magenta');
+```
+
+### Toutes les méthodes du séparateur
+
+| Méthode | Description | Exemple |
+|---------|-------------|---------|
+| `separator(string $char, int $length, string $color)` | Séparateur standard | `$console->separator('*', 50, 'cyan')` |
+| `separatorDouble(int $length, string $color)` | Séparateur double | `$console->separatorDouble(60, 'green')` |
+| `separatorWithTitle(string $title, string $char, int $length, string $color)` | Séparateur avec titre centré | `$console->separatorWithTitle('TITRE', '=', 60, 'magenta')` |
+
+### Méthodes statiques de la classe Separator
+
+| Méthode | Description | Exemple |
+|---------|-------------|---------|
+| `render(int $length, string $color)` | Séparateur standard | `Separator::render(50, 'cyan')` |
+| `renderDouble(int $length, string $color)` | Séparateur double | `Separator::renderDouble(50, 'green')` |
+| `renderWithChar(string $char, int $length, string $color)` | Séparateur avec caractère | `Separator::renderWithChar('*', 50, 'yellow')` |
+| `renderWithTitle(string $title, string $char, int $length, string $color)` | Séparateur avec titre | `Separator::renderWithTitle('TITRE', '=', 60, 'magenta')` |
 
 ---
 
@@ -1041,6 +1146,10 @@ RAM : 8.2 GB          (vert)
 | `success(string $message)` | Message de succès (vert) | `$console->success('Terminé !')` |
 | `error(string $message)` | Message d'erreur (rouge) | `$console->error('Erreur !')` |
 | `title(string $message)` | Titre encadré (cyan) | `$console->title('Dashboard')` |
+| **Séparateurs** | | |
+| `separator(string $char, int $length, string $color)` | Séparateur standard | `$console->separator('*', 50, 'cyan')` |
+| `separatorDouble(int $length, string $color)` | Séparateur double | `$console->separatorDouble(60, 'green')` |
+| `separatorWithTitle(string $title, string $char, int $length, string $color)` | Séparateur avec titre centré | `$console->separatorWithTitle('TITRE', '=', 60, 'magenta')` |
 | **Alertes** | | |
 | `alert(string $message)` | Alerte encadrée (jaune) | `$console->alert('Attention !')` |
 | `alertSuccess(string $message)` | Alerte de succès (✅ vert) | `$console->alertSuccess('OK')` |
@@ -1183,6 +1292,7 @@ $console
         'green'
     )
     ->line()
+    ->separatorWithTitle('📊 Services en cours', '=', 80, 'cyan')
     ->table(
         ['Service', 'Status', 'Port', 'Version'],
         [
@@ -1223,14 +1333,16 @@ $console = new Console();
 
 $console
     ->title('🚀 Script de déploiement')
-    ->line()
+    ->separator('=', 60, 'cyan')
     ->logInfo('Démarrage du déploiement...')
     ->logDebug('Vérification des prérequis...')
     ->logSuccess('✅ Prérequis vérifiés')
+    ->separator('-', 60, 'gray')
     ->logInfo('Téléchargement des sources...')
     ->logSuccess('✅ Sources téléchargées (2.4 MB)')
     ->logInfo('Installation des dépendances...')
     ->logWarning('⚠️ Certaines dépendances sont obsolètes')
+    ->separator('=', 60, 'green')
     ->logSuccess('✅ Déploiement terminé !')
     ->render();
 ```
@@ -1266,8 +1378,9 @@ $answers = $console->form()
     ->submit();
 
 $console->line();
+$console->separator('=', 60, 'cyan');
 $console->title('📊 Réponses');
-$console->line();
+$console->separator('=', 60, 'cyan');
 
 $console->keyValueWithValueColor([
     'Nom' => $answers->get('name'),
@@ -1284,7 +1397,53 @@ $console->success('✅ Formulaire complété avec succès !');
 $console->render();
 ```
 
-### Exemple 4 : Dashboard dynamique avec VirtualTerminalService
+### Exemple 4 : Rapport d'audit avec séparateurs
+
+```php
+<?php
+
+require_once 'vendor/autoload.php';
+
+use AndyDefer\ConsoleWriter\Console\Console;
+
+$console = new Console();
+
+$console
+    ->title('🔍 Rapport d\'audit système')
+    ->separator('=', 80, 'blue')
+    ->line()
+    ->info('📅 Date : ' . date('Y-m-d H:i:s'))
+    ->info('🖥️  Serveur : ' . php_uname('n'))
+    ->line()
+    ->separatorWithTitle('📊 Métriques système', '-', 80, 'yellow')
+    ->line()
+    ->keyValueWithValueColor([
+        'CPU' => '45%',
+        'RAM' => '8.2/16.0 Go',
+        'Disque' => '256/512 Go',
+        'Uptime' => '72h 34m',
+    ], 'green')
+    ->line()
+    ->separatorWithTitle('📋 Services', '-', 80, 'yellow')
+    ->table(
+        ['Service', 'Status', 'Port', 'Version'],
+        [
+            ['PHP-FPM', '✅ Running', '9000', '8.2.15'],
+            ['MySQL', '✅ Running', '3306', '8.0.35'],
+            ['Redis', '❌ Failed', '6379', '7.2.4'],
+        ]
+    )
+    ->line()
+    ->separatorWithTitle('⚠️  Alertes', '-', 80, 'red')
+    ->alertWarning('Redis est hors ligne depuis 2h')
+    ->line()
+    ->separatorWithTitle('✅ Conclusion', '-', 80, 'green')
+    ->success('Audit terminé avec 1 alerte')
+    ->separator('=', 80, 'blue')
+    ->render();
+```
+
+### Exemple 5 : Dashboard dynamique avec VirtualTerminalService
 
 ```php
 <?php

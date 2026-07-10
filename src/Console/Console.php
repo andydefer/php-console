@@ -20,6 +20,7 @@ use AndyDefer\ConsoleWriter\Console\Components\Logger;
 use AndyDefer\ConsoleWriter\Console\Components\Metric;
 use AndyDefer\ConsoleWriter\Console\Components\Notification;
 use AndyDefer\ConsoleWriter\Console\Components\ProgressBar;
+use AndyDefer\ConsoleWriter\Console\Components\Separator;
 use AndyDefer\ConsoleWriter\Console\Components\Sound;
 use AndyDefer\ConsoleWriter\Console\Components\Spinner;
 use AndyDefer\ConsoleWriter\Console\Components\Success;
@@ -452,6 +453,50 @@ final class Console implements ConsoleInterface
     public function columnsCompact(ListCollection|array $columns, string $separator = '   '): self
     {
         $this->addLine(Columns::renderCompact($columns, $separator));
+
+        return $this;
+    }
+
+    // ========== SEPARATOR METHODS ==========
+
+    /**
+     * Displays a separator line.
+     *
+     * @param  string  $character  The character to repeat (default: '-')
+     * @param  int  $length  The length of the separator (default: 80)
+     * @param  string  $color  The color of the separator (default: 'gray')
+     */
+    public function separator(string $character = '-', int $length = 80, string $color = 'gray'): self
+    {
+        $this->addLine(Separator::renderWithChar($character, $length, $color));
+
+        return $this;
+    }
+
+    /**
+     * Displays a double separator line (using '=').
+     *
+     * @param  int  $length  The length of the separator (default: 80)
+     * @param  string  $color  The color of the separator (default: 'gray')
+     */
+    public function separatorDouble(int $length = 80, string $color = 'gray'): self
+    {
+        $this->addLine(Separator::renderDouble($length, $color));
+
+        return $this;
+    }
+
+    /**
+     * Displays a separator with a centered title.
+     *
+     * @param  string  $title  The title to display in the center
+     * @param  string  $character  The character to repeat (default: '-')
+     * @param  int  $length  The length of the separator (default: 80)
+     * @param  string  $color  The color of the separator (default: 'gray')
+     */
+    public function separatorWithTitle(string $title, string $character = '-', int $length = 80, string $color = 'gray'): self
+    {
+        $this->addLine(Separator::renderWithTitle($title, $character, $length, $color));
 
         return $this;
     }

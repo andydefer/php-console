@@ -5,82 +5,109 @@ declare(strict_types=1);
 namespace AndyDefer\ConsoleWriter\Console\Contracts\Interfaces;
 
 /**
- * Interface pour les composants d'affichage (info, success, error, title, alert)
+ * Interface for display components (info, success, error, title, alert, separator).
  */
 interface RenderableInterface
 {
     /**
-     * Affiche un message d'information (bleu)
+     * Displays an information message (blue).
      */
     public function info(string $message): self;
 
     /**
-     * Affiche un message de succès (vert)
+     * Displays a success message (green).
      */
     public function success(string $message): self;
 
     /**
-     * Affiche un message d'erreur (rouge avec fond)
+     * Displays an error message (red with background).
      */
     public function error(string $message): self;
 
     /**
-     * Affiche un titre encadré (cyan gras)
+     * Displays a framed title (cyan bold).
      */
     public function title(string $message): self;
 
     /**
-     * Affiche une alerte encadrée (jaune)
+     * Displays a framed alert (yellow).
      */
     public function alert(string $message): self;
 
     /**
-     * Affiche une alerte avec icône personnalisée
+     * Displays an alert with a custom icon.
      */
     public function alertWithIcon(string $message, string $icon, int $padding = 4): self;
 
     /**
-     * Affiche une alerte avec couleur personnalisée
+     * Displays an alert with a custom color.
      */
     public function alertWithColor(string $message, string $color, int $padding = 4): self;
 
     /**
-     * Affiche une alerte avec bordure personnalisée
+     * Displays an alert with a custom border.
      */
     public function alertWithBorder(string $message, string $borderChar, string $color = 'yellow', int $padding = 4): self;
 
     /**
-     * Affiche une alerte de succès (✅ vert)
+     * Displays a success alert (✅ green).
      */
     public function alertSuccess(string $message): self;
 
     /**
-     * Affiche une alerte d'erreur (❌ rouge)
+     * Displays an error alert (❌ red).
      */
     public function alertError(string $message): self;
 
     /**
-     * Affiche une alerte d'avertissement (⚠️ jaune)
+     * Displays a warning alert (⚠️ yellow).
      */
     public function alertWarning(string $message): self;
 
     /**
-     * Affiche une alerte d'information (ℹ️ bleu)
+     * Displays an information alert (ℹ️ blue).
      */
     public function alertInfo(string $message): self;
 
     /**
-     * Ajoute une ligne brute (déjà formatée)
+     * Displays a separator line.
+     *
+     * @param  string  $character  The character to repeat (default: '-')
+     * @param  int  $length  The length of the separator (default: 80)
+     * @param  string  $color  The color of the separator (default: 'gray')
+     */
+    public function separator(string $character = '-', int $length = 80, string $color = 'gray'): self;
+
+    /**
+     * Displays a double separator line.
+     *
+     * @param  int  $length  The length of the separator (default: 80)
+     * @param  string  $color  The color of the separator (default: 'gray')
+     */
+    public function separatorDouble(int $length = 80, string $color = 'gray'): self;
+
+    /**
+     * Displays a titled separator line.
+     *
+     * @param  string  $title  The title to display in the separator
+     * @param  string  $character  The character to repeat (default: '-')
+     * @param  int  $length  The length of the separator (default: 80)
+     * @param  string  $color  The color of the separator (default: 'gray')
+     */
+    public function separatorWithTitle(string $title, string $character = '-', int $length = 80, string $color = 'gray'): self;
+
+    /**
+     * Adds a raw line (already formatted).
      */
     public function raw(string $line): self;
 
     /**
-     * Ajoute une ligne de texte simple
+     * Adds a plain text line.
      */
     public function line(string $message = ''): self;
 
     /**
-     * Ajoute des sauts de ligne
+     * Adds line breaks.
      */
     public function newLine(int $count = 1): self;
 }
