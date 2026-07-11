@@ -238,6 +238,61 @@ $console
     ->badgePrimary('Admin');
 
 // ========================================================================
+// 13. KEYVALUE - TEXTES TRÈS LONGS (Multiline)
+// ========================================================================
+
+$console->line();
+$console->info('13. KeyValue avec textes très longs (multiline)');
+
+$longData = MapCollection::from([
+    'Description courte' => 'Ceci est une description courte.',
+    'Description longue' => 'Ceci est une description très longue qui dépasse la largeur standard de la console et qui devrait être automatiquement coupée sur plusieurs lignes pour améliorer la lisibilité.',
+    'Très longue clé avec beaucoup de texte' => 'Voici une valeur qui est également très longue et qui doit être affichée sur plusieurs lignes pour ne pas dépasser la largeur de l\'écran. Le système de KeyValue doit gérer cela proprement.',
+    'Clé' => 'Une valeur relativement courte.',
+    'Configuration' => 'Ceci est un message d\'erreur très long qui explique en détail ce qui s\'est passé pendant l\'exécution de la tâche. Il contient beaucoup d\'informations utiles pour le débogage.',
+]);
+
+$console->title('📝 Exemple de textes longs');
+$console->line();
+$console->raw(KeyValue::renderWithValueColor($longData, 'green'));
+$console->line();
+
+// ========================================================================
+// 14. KEYVALUE - TEXTE LONG AVEC SÉPARATEUR PERSONNALISÉ
+// ========================================================================
+
+$console->line();
+$console->info('14. KeyValue avec texte long et séparateur personnalisé');
+
+$longDataWithSeparator = MapCollection::from([
+    'Erreur' => 'La connexion à la base de données a échoué après plusieurs tentatives. Veuillez vérifier vos identifiants et la disponibilité du serveur.',
+    'Solution' => 'Vérifiez que le serveur MySQL est en cours d\'exécution. Assurez-vous que les identifiants dans le fichier .env sont corrects. Si le problème persiste, contactez l\'administrateur système.',
+    'Détails' => 'Le serveur a renvoyé une erreur 1045: Access denied for user \'root\'@\'localhost\' (using password: YES). Ceci indique que le mot de passe est incorrect.',
+]);
+
+$console->raw(KeyValue::renderWithSeparator($longDataWithSeparator, '  →  '));
+$console->line();
+
+// ========================================================================
+// 15. KEYVALUE - MIXTE : clés longues + valeurs longues
+// ========================================================================
+
+$console->line();
+$console->info('15. KeyValue avec clés longues et valeurs longues (mixte)');
+
+$mixedLongData = MapCollection::from([
+    'tasks:process' => 'Process all pending tasks in a single batch (no polling, no waiting) (aliases: task-process, tasks-process)',
+    'tasks:watch' => 'Watch and process tasks in a continuous loop with configurable interval (in seconds, min 3) and duration. Use --parallel=N for parallel execution with N workers. (aliases: task-watch, tasks-watch)',
+    'kernel:audit' => 'Audit the kernel discovery system and display problems and metrics. Use --verbose for detailed output. (aliases: audit)',
+    'clean:directive-logs' => 'Remove old execution log files that exceed the retention period. Use --dry-run to preview files to delete. (aliases: log-directive-clean, ldc)',
+]);
+
+$console->title('📋 Exemple de directives avec descriptions longues');
+$console->line();
+$console->raw(KeyValue::renderWithValueColor($mixedLongData, 'cyan'));
+$console->line();
+
+// ========================================================================
 // FIN
 // ========================================================================
 
